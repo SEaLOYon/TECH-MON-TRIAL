@@ -1023,7 +1023,7 @@
   function loginSuccess(user){
     currentUser=user;
     var isPmo = user.role === 'PMO';
-    ['elec','ec','vib','fuel','chem','boiler','pr'].forEach(function(prefix){
+    ['elec','ec','vib','fuel','chem','boiler','pr','rd'].forEach(function(prefix){
       var techEl=document.getElementById(prefix+'-tech'),techVal=document.getElementById(prefix+'-tech-val');
       var shiftEl=document.getElementById(prefix+'-shift'),shiftVal=document.getElementById(prefix+'-shift-val');
       if(techEl)techEl.value=user.name||'';if(techVal)techVal.textContent=user.name||'—';
@@ -1032,7 +1032,7 @@
       if(plantEl&&user.plant){for(var i=0;i<plantEl.options.length;i++){if(plantEl.options[i].value===user.plant){plantEl.selectedIndex=i;break;}}}
     });
     var isSuper=user.role==='SUPER';
-    ['elec','ec','vib','fuel','chem','boiler','pr'].forEach(function(p){
+    ['elec','ec','vib','fuel','chem','boiler','pr','rd'].forEach(function(p){
       var plantEl=document.getElementById(p+'-plant');
       var shiftLocked=document.getElementById(p+'-shift-locked');
       var shiftSuper=document.getElementById(p+'-shift-super');
@@ -1055,7 +1055,21 @@
     });
     document.getElementById('badgeName').innerHTML=user.name+(isSuper?'<span class="super-badge">★ SUPER</span>':'');
     if(isPmo){ applyPmoView(user); }
-    else { restoreTechView(); }
+    else {
+      restoreTechView();
+      // For non-PMO users, also load rolls die config if plant is set
+      if(user.plant){
+        setTimeout(function(){
+          var rdPlant = document.getElementById('rd-plant');
+          if(rdPlant){
+            for(var i=0;i<rdPlant.options.length;i++){
+              if(rdPlant.options[i].value===user.plant){ rdPlant.selectedIndex=i; break; }
+            }
+            onRdPlantChange();
+          }
+        }, 600);
+      }
+    }
     loadDeviceConfig();
     if(user.plant){
       setTimeout(function(){
@@ -1083,13 +1097,13 @@
   function doLogout(){
     currentUser=null;
     restoreTechView();
-    ['elec','ec','vib','fuel','chem','boiler','pr'].forEach(function(p){
+    ['elec','ec','vib','fuel','chem','boiler','pr','rd'].forEach(function(p){
       var pEl=document.getElementById(p+'-plant');
       if(pEl){pEl.disabled=false;pEl.style.borderColor='';pEl.selectedIndex=0;}
       var sl=document.getElementById(p+'-shift-locked');if(sl)sl.style.display='flex';
       var ss=document.getElementById(p+'-shift-super');if(ss)ss.style.display='none';
     });
-    ['elec','ec','vib','fuel','chem','boiler','pr'].forEach(function(prefix){
+    ['elec','ec','vib','fuel','chem','boiler','pr','rd'].forEach(function(prefix){
       ['tech','shift'].forEach(function(f){var el=document.getElementById(prefix+'-'+f);if(el)el.value='';var v=document.getElementById(prefix+'-'+f+'-val');if(v)v.textContent='—';});
     });
     document.getElementById('userBadge').style.display='none';
