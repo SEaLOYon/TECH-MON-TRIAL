@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TechMon — Plant Monitoring</title>
+<meta name="theme-color" content="#0f172a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="TechMon"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<link rel="manifest" href="./manifest.json"/>
+<link rel="icon" type="image/png" href="./favicon.png"/>
+<link rel="apple-touch-icon" href="./icon-192.png"/>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=DM+Sans:wght@400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0b0f1a; --surface: #131929; --surface2: #1a2338; --surface3: #1f2d47;
+    --border: rgba(99,180,255,0.15); --accent: #3b82f6; --accent2: #06b6d4;
+    --text: #e8edf5; --muted: #7a8aaa;
+    --success: #10b981; --warn: #f59e0b; --danger: #ef4444;
+    --radius: 12px; --input-h: 48px;
+  }
+  body { font-family:DM Sans,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:0 0 5rem; -webkit-font-smoothing:antialiased; }
+  .header { background:linear-gradient(135deg,#0f172a,#1a3358); border-bottom:1px solid var(--border); padding:1rem 1.1rem; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:30; }
+  .header-icon { width:38px;height:38px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .header-icon svg { width:19px;height:19px;stroke:#fff;fill:none;stroke-width:2.2; }
+  .header-text h1 { font-family:Rajdhani,sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:.05em;color:#fff; }
+  .header-text p { font-size:.72rem;color:var(--muted);margin-top:1px; }
+  .live-bar { background:var(--surface2); border-bottom:1px solid var(--border); padding:.42rem 1.1rem; display:flex; align-items:center; gap:7px; font-size:.7rem; color:var(--muted); position:sticky; top:69px; z-index:29; }
+  .dot { width:6px;height:6px;border-radius:50%;background:var(--success);animation:pulse 2s infinite;flex-shrink:0; }
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .tab-nav-wrap { background:var(--surface); border-bottom:1px solid var(--border); position:sticky; top:98px; z-index:28; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .tab-nav-wrap::-webkit-scrollbar { display:none; }
+  .tab-nav { display:flex; min-width:max-content; padding:0 .6rem; }
+  .tab-btn { padding:.72rem .9rem; border:none; background:none; font-family:Rajdhani,sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; transition:color .2s,border-color .2s; white-space:nowrap; -webkit-tap-highlight-color:transparent; display:flex; align-items:center; gap:6px; }
+  .tab-btn svg { width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;flex-shrink:0; }
+  .tab-btn.active { color:var(--accent2); border-bottom-color:var(--accent2); }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+  .container { max-width:720px; margin:0 auto; padding:1rem .9rem; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1rem; margin-bottom:.9rem; }
+  .card-title { font-family:Rajdhani,sans-serif; font-size:.72rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--accent2); margin-bottom:.85rem; display:flex; align-items:center; gap:8px; }
+  .card-title::after { content:''; flex:1; height:1px; background:var(--border); }
+  .field { display:flex; flex-direction:column; gap:5px; margin-bottom:.75rem; }
+  .field:last-child { margin-bottom:0; }
+  .field label { font-size:.72rem; color:var(--muted); font-weight:500; letter-spacing:.02em; }
+  input[type="text"], select, textarea { width:100%; height:var(--input-h); background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:0 .9rem; color:var(--text); font-family:DM Sans,sans-serif; font-size:.95rem; outline:none; transition:border-color .2s; -webkit-appearance:none; }
+  input[type="text"]:focus, select:focus, textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+  input::placeholder, textarea::placeholder { color:#3d4f6e; }
+  select option { background:#1a2338; }
+  textarea { height:auto; min-height:80px; padding:.8rem .9rem; resize:none; line-height:1.55; font-size:.9rem; }
+  .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+  .timestamp-pill { height:var(--input-h); background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:0 .9rem; font-family:Rajdhani,sans-serif; font-size:.78rem; color:var(--muted); letter-spacing:.06em; display:flex; align-items:center; gap:7px; }
+  .ts-dot { width:5px;height:5px;border-radius:50%;background:var(--success);animation:pulse 2s infinite;flex-shrink:0; }
+  .required { color:var(--accent); }
+  input[type="number"] { -moz-appearance:textfield; width:100%; height:var(--input-h); background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:0 .5rem; color:var(--text); font-family:Rajdhani,sans-serif; font-size:1.15rem; font-weight:700; text-align:center; outline:none; transition:border-color .2s; }
+  input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  input[type="number"]:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+  input[type="number"]::placeholder { color:#3d4f6e; font-size:.8rem; font-weight:400; }
+  .id-locked { height:var(--input-h); background:var(--surface2); border:1px solid rgba(99,180,255,.1); border-radius:9px; padding:0 .9rem; color:var(--text); font-family:DM Sans,sans-serif; font-size:.95rem; display:flex; align-items:center; gap:8px; }
+  .id-locked svg { width:13px;height:13px;stroke:var(--muted);fill:none;stroke-width:2;flex-shrink:0; }
+  .id-locked-val { color:var(--text); font-weight:500; }
+  .id-locked-sub { font-size:.7rem; color:var(--muted); margin-left:auto; }
+  .device-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:.8rem; overflow:hidden; }
+  .device-card-header { background:var(--surface2); border-bottom:1px solid var(--border); padding:.65rem 1rem; display:flex; align-items:center; justify-content:space-between; }
+  .device-num { font-family:Rajdhani,sans-serif; font-size:.8rem; font-weight:700; letter-spacing:.1em; color:var(--accent2); text-transform:uppercase; }
+  .del-btn { width:30px;height:30px;border-radius:7px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.08);color:var(--danger);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s; }
+  .del-btn svg { width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5; }
+  .del-btn:disabled { opacity:.2;cursor:not-allowed; }
+  .device-card-body { padding:1rem; display:flex; flex-direction:column; gap:.7rem; }
+  .reading-group { background:var(--surface2); border:1px solid rgba(99,180,255,.1); border-radius:10px; padding:.75rem .8rem; }
+  .reading-group-title { font-family:Rajdhani,sans-serif; font-size:.65rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:.6rem; text-align:center; }
+  .readings-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.5rem; }
+  .reading-cell { display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .rc-label { font-family:Rajdhani,sans-serif; font-size:.62rem; font-weight:600; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; text-align:center; }
+  .rc-unit { font-size:.56rem; color:#3d4f6e; text-align:center; margin-top:2px; }
+  .reading-cell input { font-size:1.1rem; }
+  .status-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.5rem; }
+  .status-btn { padding:.72rem .5rem; border:1px solid var(--border); border-radius:9px; background:var(--surface2); color:var(--muted); font-family:DM Sans,sans-serif; font-size:.82rem; font-weight:500; cursor:pointer; text-align:center; transition:all .18s; -webkit-tap-highlight-color:transparent; }
+  .status-btn.ok { border-color:var(--success); background:rgba(16,185,129,.13); color:var(--success); }
+  .status-btn.wrn { border-color:var(--warn); background:rgba(245,158,11,.13); color:var(--warn); }
+  .status-btn.crit { border-color:var(--danger); background:rgba(239,68,68,.13); color:var(--danger); }
+  .add-device-btn { width:100%; padding:.85rem; margin-bottom:.9rem; background:rgba(59,130,246,.1); border:1.5px dashed rgba(59,130,246,.4); color:var(--accent); border-radius:var(--radius); font-family:DM Sans,sans-serif; font-size:.9rem; font-weight:500; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all .18s; -webkit-tap-highlight-color:transparent; }
+  .add-device-btn svg { width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.5; }
+  .vib-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:10px; border:1px solid var(--border); margin-bottom:.9rem; }
+  .vib-table { width:100%; border-collapse:collapse; min-width:420px; }
+  .vib-table thead tr { background:var(--surface2); }
+  .vib-table th { font-family:Rajdhani,sans-serif; font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--accent2); padding:.6rem .55rem; text-align:center; border-bottom:1px solid var(--border); border-right:1px solid var(--border); white-space:nowrap; }
+  .vib-table th:last-child { border-right:none; }
+  .vib-table th.col-point { text-align:left; min-width:52px; }
+  .vib-table th.col-location { text-align:left; min-width:130px; }
+  .vib-table tbody tr { border-bottom:1px solid rgba(99,180,255,.07); }
+  .vib-table tbody tr:last-child { border-bottom:none; }
+  .vib-table tbody tr:nth-child(odd) { background:rgba(26,35,56,.6); }
+  .vib-table tbody tr:nth-child(even) { background:rgba(19,25,41,.6); }
+  .vib-table td { padding:.4rem .45rem; border-right:1px solid rgba(99,180,255,.07); vertical-align:middle; }
+  .vib-table td:last-child { border-right:none; }
+  .vib-point { font-family:Rajdhani,sans-serif; font-size:.82rem; font-weight:700; color:var(--accent2); letter-spacing:.06em; text-align:center; white-space:nowrap; }
+  .vib-location { font-size:.78rem; color:var(--text); line-height:1.3; padding-left:.2rem; }
+  .vib-location .sub { font-size:.65rem; color:var(--muted); display:block; margin-top:1px; }
+  .vib-input-wrap { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .vib-input-wrap input[type="number"] { height:38px; font-size:.95rem; border-radius:7px; min-width:64px; padding:0 .3rem; }
+  .vib-unit { font-size:.52rem; color:#3d4f6e; letter-spacing:.04em; }
+  .chem-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:10px; border:1px solid var(--border); margin-bottom:.75rem; }
+  .chem-table { width:100%; border-collapse:collapse; min-width:300px; }
+  .chem-table thead tr { background:var(--surface2); }
+  .chem-table th { font-family:Rajdhani,sans-serif; font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--accent2); padding:.65rem .6rem; text-align:center; border-bottom:1px solid var(--border); border-right:1px solid var(--border); white-space:nowrap; }
+  .chem-table th.col-chem { text-align:left; min-width:130px; }
+  .chem-table th:last-child { border-right:none; }
+  .chem-table tbody tr { border-bottom:1px solid rgba(99,180,255,.07); }
+  .chem-table tbody tr:last-child { border-bottom:none; }
+  .chem-table tbody tr:nth-child(odd) { background:rgba(26,35,56,.6); }
+  .chem-table tbody tr:nth-child(even) { background:rgba(19,25,41,.6); }
+  .chem-table td { padding:.45rem .5rem; border-right:1px solid rgba(99,180,255,.07); vertical-align:middle; }
+  .chem-table td:last-child { border-right:none; }
+  .chem-label { font-family:Rajdhani,sans-serif; font-size:.82rem; font-weight:700; color:var(--text); letter-spacing:.04em; padding-left:.25rem; white-space:nowrap; }
+  .chem-input-wrap { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .chem-input-wrap input[type="number"] { height:36px; font-size:.92rem; border-radius:7px; min-width:70px; padding:0 .3rem; }
+  .checklist-grid { display:flex; flex-direction:column; gap:.55rem; }
+  .check-item { display:flex; align-items:center; gap:12px; background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:.65rem .8rem; }
+  .check-label { font-size:.82rem; color:var(--text); font-weight:500; flex:1; }
+  .check-label .check-unit { font-size:.68rem; color:var(--muted); margin-left:4px; }
+  .check-input-wrap { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .check-input-wrap input[type="number"] { width:64px; height:36px; font-size:1rem; border-radius:7px; }
+  .check-unit-tag { font-size:.7rem; color:var(--muted); font-family:Rajdhani,sans-serif; font-weight:600; letter-spacing:.04em; }
+  .replenish-btn { width:100%; padding:.85rem; margin-bottom:.9rem; background:rgba(16,185,129,.08); border:1.5px dashed rgba(16,185,129,.4); color:var(--success); border-radius:var(--radius); font-family:DM Sans,sans-serif; font-size:.9rem; font-weight:500; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all .18s; -webkit-tap-highlight-color:transparent; }
+  .replenish-btn svg { width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.5; }
+  .replenish-section { display:none; background:rgba(16,185,129,.05); border:1px solid rgba(16,185,129,.2); border-radius:var(--radius); padding:1rem; margin-bottom:.9rem; }
+  .replenish-section.show { display:block; }
+  .replenish-section .card-title { color:var(--success); }
+  .replenish-section .card-title::after { background:rgba(16,185,129,.2); }
+  .replenish-grid { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+  .replenish-item { background:var(--surface2); border:1px solid rgba(16,185,129,.15); border-radius:10px; padding:.85rem .9rem; }
+  .replenish-item-title { font-family:Rajdhani,sans-serif; font-size:.7rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--success); margin-bottom:.6rem; }
+  .replenish-unit-row { display:flex; align-items:center; gap:6px; }
+  .replenish-unit-tag { font-size:.72rem; color:var(--muted); white-space:nowrap; flex-shrink:0; font-weight:500; }
+  .submit-btn { width:100%; padding:1rem; background:var(--accent); border:none; border-radius:var(--radius); color:#fff; font-family:Rajdhani,sans-serif; font-size:1.1rem; font-weight:700; letter-spacing:.1em; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:10px; -webkit-tap-highlight-color:transparent; }
+  .submit-btn:active { transform:scale(.98); }
+  .submit-btn:disabled { background:#2a3a55; color:var(--muted); cursor:not-allowed; }
+  .submit-btn svg { width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2.5; }
+  .toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%) translateY(100px); background:var(--success); color:#fff; padding:.75rem 1.5rem; border-radius:50px; font-size:.88rem; font-weight:500; z-index:100; transition:transform .3s cubic-bezier(.34,1.56,.64,1); white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,.4); }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+  .toast.error { background:var(--danger); }
+  .login-overlay { position:fixed; inset:0; z-index:200; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.5rem; transition:opacity .4s ease; }
+  .login-overlay.hiding { opacity:0; pointer-events:none; }
+  .login-overlay.hidden { display:none; }
+  .login-card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:2rem 1.5rem; width:100%; max-width:380px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  .login-logo { width:52px;height:52px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.1rem; }
+  .login-logo svg { width:24px;height:24px;stroke:#fff;fill:none;stroke-width:2.2; }
+  .login-title { font-family:Rajdhani,sans-serif; font-size:1.3rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#fff; text-align:center; margin-bottom:.25rem; }
+  .login-sub { font-size:.75rem; color:var(--muted); text-align:center; margin-bottom:1.6rem; }
+  .login-field { display:flex; flex-direction:column; gap:5px; margin-bottom:.85rem; }
+  .login-field label { font-size:.72rem; color:var(--muted); font-weight:500; }
+  .login-field input { width:100%; height:var(--input-h); background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:0 .9rem; color:var(--text); font-family:DM Sans,sans-serif; font-size:.95rem; outline:none; transition:border-color .2s; -webkit-appearance:none; }
+  .login-field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+  .login-field input::placeholder { color:#3d4f6e; }
+  .login-btn { width:100%; height:50px; padding:0 1rem; background:var(--accent); border:none; border-radius:10px; color:#fff; font-family:Rajdhani,sans-serif; font-size:1.05rem; font-weight:700; letter-spacing:.1em; cursor:pointer; margin-top:.3rem; display:flex; align-items:center; justify-content:center; gap:8px; transition:all .2s; -webkit-tap-highlight-color:transparent; }
+  .login-btn:active { transform:scale(.98); }
+  .login-btn:disabled { background:#2a3a55; color:var(--muted); cursor:not-allowed; }
+  .login-error { margin-top:.75rem; padding:.6rem .9rem; border-radius:8px; background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.3); color:var(--danger); font-size:.78rem; text-align:center; display:none; }
+  .login-error.show { display:block; }
+  .user-badge { margin-left:auto; flex-shrink:0; background:rgba(59,130,246,.15); border:1px solid rgba(59,130,246,.25); border-radius:8px; padding:.3rem .7rem; display:flex; align-items:center; gap:6px; font-size:.7rem; color:var(--accent2); font-weight:500; }
+  .user-badge svg { width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.2;flex-shrink:0; }
+  .logout-btn { background:none; border:none; color:var(--muted); cursor:pointer; font-size:.65rem; text-decoration:underline; padding:0; margin-left:4px; font-family:DM Sans,sans-serif; }
+  .logout-btn:hover { color:var(--danger); }
+
+  .super-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:5px;padding:1px 7px;font-size:.62rem;font-family:Rajdhani,sans-serif;font-weight:700;color:var(--warn);letter-spacing:.06em;margin-left:6px;}
+  .super-override{display:none;margin-top:.5rem;padding:.65rem;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:9px;}
+  .super-override label{font-size:.68rem;color:var(--warn);font-weight:600;}
+  .photo-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.75rem .8rem;margin-bottom:.75rem;}
+  .photo-card-title{font-family:Rajdhani,sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2);margin-bottom:.6rem;}
+  .photo-grid{display:grid;gap:.5rem;}
+  .photo-grid.g1{grid-template-columns:1fr;}
+  .photo-grid.g2{grid-template-columns:1fr 1fr;}
+  .photo-slot label{display:block;font-size:.67rem;color:var(--muted);margin-bottom:3px;}
+  .photo-slot input[type=file]{width:100%;padding:.45rem .7rem;background:var(--surface3);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:.78rem;cursor:pointer;}
+  .photo-prev{display:none;margin-top:3px;}
+  .photo-prev img{width:100%;border-radius:7px;border:1px solid var(--border);max-height:140px;object-fit:cover;}
+
+
+  .pw-overlay { display:none; position:fixed; inset:0; z-index:250; background:rgba(11,15,26,.85); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:1.5rem; }
+  .pw-overlay.show { display:flex; }
+  .pw-card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:1.75rem 1.4rem; width:100%; max-width:380px; box-shadow:0 20px 60px rgba(0,0,0,.6); }
+  .pw-title { font-family:Rajdhani,sans-serif; font-size:1.15rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#fff; text-align:center; margin-bottom:.25rem; }
+  .pw-sub { font-size:.72rem; color:var(--muted); text-align:center; margin-bottom:1.3rem; }
+
+
+  .prev-ref { font-size:.68rem; color:var(--muted); margin-top:3px; font-family:Rajdhani,sans-serif; letter-spacing:.03em; }
+  .prev-ref-val { color:var(--accent2); font-weight:700; }
+  .meter-card { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:.75rem .9rem; }
+  .meter-name { font-family:Rajdhani,sans-serif; font-size:.72rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--accent2); margin-bottom:.45rem; }
+
+
+  .yn-row { display:flex; gap:.4rem; justify-content:center; }
+  .yn-btn { flex:1; max-width:60px; height:34px; border:1px solid var(--border); border-radius:7px; background:var(--surface2); color:var(--muted); font-family:Rajdhani,sans-serif; font-size:.75rem; font-weight:700; letter-spacing:.05em; cursor:pointer; -webkit-tap-highlight-color:transparent; transition:all .15s; }
+  .yn-btn.yes-on { background:rgba(16,185,129,.15); border-color:var(--success); color:var(--success); }
+  .yn-btn.no-on { background:rgba(239,68,68,.12); border-color:var(--danger); color:var(--danger); }
+
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+</style>
+</head>
+<body>
+
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-logo" style="background:transparent;padding:0;width:auto;height:auto;"><img src="./icon-192.png" alt="TechMon" style="width:80px;height:80px;border-radius:18px;display:block;"/></div>
+    <div class="login-title">TechMon</div>
+    <div class="login-sub">Sign in to access your shift report</div>
+    <div class="login-field"><label>Username</label><input type="text" id="loginUser" placeholder="Enter your username..." autocomplete="username" autocapitalize="none" /></div>
+    <div class="login-field"><label>Password</label><input type="password" id="loginPass" placeholder="Enter your password..." autocomplete="current-password" /></div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">
+      <svg viewBox="0 0 24 24" width="18" height="18" style="stroke:#fff;fill:none;stroke-width:2.2;flex-shrink:0;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      SIGN IN
+    </button>
+    <div class="login-error" id="loginError">Incorrect username or password.</div>
+  </div>
+</div>
+
+<div class="header">
+  <div class="header-icon" style="background:transparent;overflow:hidden;"><img src="./icon-192.png" alt="TechMon" style="width:38px;height:38px;border-radius:9px;display:block;"/></div>
+  <div class="header-text"><h1>TECHMON</h1><p>Vienovo · Technician Monitoring</p></div>
+  <div class="user-badge" id="userBadge" style="display:none;">
+    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span id="badgeName">—</span><button class="logout-btn" onclick="openPwChange()" style="color:var(--accent2);">change pw</button><button class="logout-btn" onclick="doLogout()">logout</button>
+  </div>
+</div>
+<div class="live-bar"><div class="dot"></div><span>Live · Syncs to dashboard</span></div>
+
+<div class="tab-nav-wrap"><div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('electrical')" id="tab-electrical"><svg viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Line</button>
+  <button class="tab-btn" onclick="switchTab('econsum')" id="tab-econsum"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="8" y2="15"/><line x1="11" y1="15" x2="13" y2="15"/></svg>Consumption</button>
+  <button class="tab-btn" onclick="switchTab('vibration')" id="tab-vibration"><svg viewBox="0 0 24 24"><path d="M2 12h2l3-9 4 18 3-9h2"/><line x1="20" y1="8" x2="20" y2="16"/></svg>Vibration</button>
+  <button class="tab-btn" onclick="switchTab('fuel')" id="tab-fuel"><svg viewBox="0 0 24 24"><path d="M3 22V8l7-6 7 6v14"/><rect x="9" y="14" width="4" height="8"/><path d="M17 8h1a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1"/></svg>Fuel</button>
+  <button class="tab-btn" onclick="switchTab('chemical')" id="tab-chemical"><svg viewBox="0 0 24 24"><path d="M9 3h6v10l4 8H5l4-8V3z"/><line x1="9" y1="7" x2="15" y2="7"/></svg>Chem &amp; Softener</button>
+  <button class="tab-btn" onclick="switchTab('boiler')" id="tab-boiler"><svg viewBox="0 0 24 24"><path d="M4 4h16v6a8 8 0 0 1-16 0V4z"/><line x1="12" y1="14" x2="12" y2="20"/><line x1="8" y1="20" x2="16" y2="20"/></svg>Boiler</button>
+  <button class="tab-btn" onclick="switchTab('purchase')" id="tab-purchase"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Purchase</button>
+  <button class="tab-btn" onclick="switchTab('rolldie')" id="tab-rolldie"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>Rolls &amp; Die</button>
+</div></div>
+
+<!-- TAB 1: LINE -->
+<div class="tab-panel active" id="panel-electrical"><div class="container"><form id="electricalForm">
+  <div class="card"><div class="card-title">Identification</div>
+    <div class="field"><label>Plant <span class="required">*</span></label><select id="elec-plant" required><option value="" disabled selected>Select plant...</option><option value="HOREB">HOREB</option><option value="ARGAO">ARGAO</option></select></div>
+    <div class="field"><label>Technician</label><div class="id-locked"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="id-locked-val" id="elec-tech-val">—</span><span class="id-locked-sub">signed in</span></div><input type="hidden" id="elec-tech" /></div>
+    <div class="row-2">
+      <div class="field"><label>Shift</label><div class="id-locked" id="elec-shift-locked"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="id-locked-val" id="elec-shift-val">—</span><span class="id-locked-sub">assigned</span></div><select id="elec-shift-super" style="display:none;border-color:rgba(245,158,11,.4);color:var(--warn);" onchange="sSh('elec',this.value)"><option value="Day">Day Shift</option><option value="Night">Night Shift</option></select><input type="hidden" id="elec-shift" /></div>
+      <div class="field"><label>Date &amp; Time</label><div class="timestamp-pill"><div class="ts-dot"></div><span class="ts-display">—</span></div></div>
+    </div>
+  </div>
+  <div id="deviceList"></div>
+  <button type="button" class="add-device-btn" onclick="addDevice()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Device</button>
+  <button type="submit" class="submit-btn" id="elecSubmitBtn"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>SUBMIT LINE REPORT</button>
+</form></div></div>
+
+
+<!-- TAB: ELECTRIC CONSUMPTION -->
+<div class="tab-panel" id="panel-econsum"><div class="container"><form id="econsumForm">
+  <div class="card"><div class="card-title">Identification</div>
+    <div class="field"><label>Plant <span class="required">*</span></label>
+      <select id="ec-plant" required onchange="loadElectricMeters(this.value)">
+        <option value="" disabled selected>Select plant...</option>
+        <option value="HOREB">HOREB</option><option value="ARGAO">ARGAO</option>
+      </select>
+    </div>
+    <div class="field"><label>Technician</label>
+      <div class="id-locked"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="id-locked-val" id="ec-tech-val">—</span><span class="id-locked-sub">signed in</span></div>
+      <input type="hidden" id="ec-tech" />
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Shift</label>
+        <div class="id-locked" id="ec-shift-locked"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="id-locked-val" id="ec-shift-val">—</span><span class="id-locked-sub">assigned</span></div>
+        <select id="ec-shift-super" style="display:none;border-color:rgba(245,158,11,.4);color:var(--warn);" onchange="sSh('ec',this.value)"><option value="Day">Day Shift</option><option value="Night">Night Shift</option></select>
+        <input type="hidden" id="ec-shift" />
+      </div>
+      <div class="field"><label>Date &amp; Time</label>
+        <div class="timestamp-pill"><div class="ts-dot"></div><span class="ts-display">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card"><div class="card-title">Meter Readings (kWh)</div>
+    <div id="ec-meter-list" style="display:flex;flex-direction:column;gap:.75rem;">
+      <div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem;">Select a plant to load meters...</div>
+    </div>
+    <div class="field" style="margin-top:.85rem;"><label>Remarks</label>
+      <textarea name="ec_remarks" placeholder="Note any unusual consumption, meter issues, power outages..."></textarea>
+    </div>
+  </div>
+
+  <div class="card"><div class="card-title">Photo Documentation</div>
+    <div class="photo-grid g2">
+      <div class="photo-slot"><label>Meter Photo 1</label>
+        <input type="file" id="pf_ec1" accept="image/*" capture="environment"/>
+        <div class="photo-prev" id="pf_ec1_p"><img/></div></div>
+      <div class="photo-slot"><label>Meter Photo 2</label>
+        <input type="file" id="pf_ec2" accept="image/*" capture="environment"/>
+        <div class="photo-prev" id="pf_ec2_p"><img/></div></div>
+    </div>
+  </div>
+
+  <button type="submit" class="submit-btn" id="ecSubmitBtn">
+    <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    SUBMIT CONSUMPTION REPORT
+  </button>
+</form></div></div>
+
+<!-- TAB 2: VIBRATION -->
+<div class="tab-panel" id="panel-vibration"><div class="container"><form id="vibrationForm">
+  <div class="card"><div class="card-title">Identification</div>
+    <div class="field"><label>Plant <span class="required">*</span></label><select id="vib-plant" required><option value="" disabled selected>Select plant...</option><option value="HOREB">HOREB</option><option value="ARGAO">ARGAO</option></select></div>
+    <div class="field"><label>Technician</label><div class="id-locked"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="id-locked-val" id="vib-tech-val">—</span><span class="id-locked-sub">signed in</span></div><input type="hidden" id="vib-tech" /></div>
+    <div class="row-2">
+      <div class="field"><label>Shift</label><div class="id-locked" id="vib-shift-locked"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="id-locked-val" id="vib-shift-val">—</span><span class="id-locked-sub">assigned</span></div><select id="vib-shift-super" style="display:none;border-color:rgba(245,158,11,.4);color:var(--warn);" onchange="sSh('vib',this.value)"><option value="Day">Day Shift</option><option value="Night">Night Shift</option></select><input type="hidden" id="vib-shift" /></div>
+      <div class="field"><label>Date &amp; Time</label><div class="timestamp-pill"><div class="ts-dot"></div><span class="ts-display">—</span></div></div>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Equipment</div>
+    <div class="field"><label>Equipment Being Monitored <span class="required">*</span></label>
+      <select id="vib-equipment" required><option value="" disabled selected>Select equipment...</option><option value="Hammer Mill">Hammer Mill</option><option value="Pellet Mill">Pellet Mill</option><option value="Bucket Elevator">Bucket Elevator</option><option value="Blower">Blower</option></select>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Equipment Readings</div>
+    <div class="vib-table-wrap"><table class="vib-table"><thead><tr><th class="col-point">Point</th><th class="col-location">Location</th><th>Horizontal</th><th>Vertical</th><th>Axial</th></tr></thead><tbody>
+      <tr><td><div class="vib-point">M1</div></td><td><div class="vib-location">Motor Drive End Bearing<span class="sub">Motor</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r1_h" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r1_v" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r1_a" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td></tr>
+      <tr><td><div class="vib-point">M2</div></td><td><div class="vib-location">Motor Non-Drive End Bearing<span class="sub">Motor</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r2_h" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r2_v" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r2_a" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td></tr>
+      <tr><td><div class="vib-point">P1</div></td><td><div class="vib-location">Input Shaft Housing<span class="sub">Gearbox / Pump</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r3_h" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r3_v" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r3_a" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td></tr>
+      <tr><td><div class="vib-point">P2</div></td><td><div class="vib-location">Front Housing<span class="sub">Gearbox / Pump</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r4_h" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r4_v" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r4_a" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td></tr>
+      <tr><td><div class="vib-point">B1</div></td><td><div class="vib-location">Motor Base<span class="sub">Structure</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r5_h" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r5_v" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r5_a" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td></tr>
+      <tr><td><div class="vib-point">B2</div></td><td><div class="vib-location">Equipment Base / Frame<span class="sub">Structure</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r6_h" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r6_v" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td><td><div class="vib-input-wrap"><input type="number" name="vib_r6_a" placeholder="0.0" step="0.01" inputmode="decimal"/><span class="vib-unit">mm/s</span></div></td></tr>
+    </tbody></table></div>
+    <div class="field"><label>Remarks</label><textarea name="vib_remarks" placeholder="Note any abnormal readings..."></textarea></div>
+  </div>
+
+  <div class="photo-card"><div class="photo-card-title">Photo Documentation</div><div class="photo-grid g1"><div class="photo-slot"><label>Reference Photo</label><input type="file" id="pf_vib" accept="image/*" capture="environment"/><div class="photo-prev" id="pf_vib_p"><img/></div></div></div></div>
+  <button type="submit" class="submit-btn" id="vibSubmitBtn"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>SUBMIT VIBRATION REPORT</button>
+</form></div></div>
+
+<!-- TAB 3: FUEL -->
+<div class="tab-panel" id="panel-fuel"><div class="container"><form id="fuelForm">
+  <div class="card"><div class="card-title">Identification</div>
+    <div class="field"><label>Plant <span class="required">*</span></label><select id="fuel-plant" required><option value="" disabled selected>Select plant...</option><option value="HOREB">HOREB</option><option value="ARGAO">ARGAO</option></select></div>
+    <div class="field"><label>Technician</label><div class="id-locked"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="id-locked-val" id="fuel-tech-val">—</span><span class="id-locked-sub">signed in</span></div><input type="hidden" id="fuel-tech" /></div>
+    <div class="row-2">
+      <div class="field"><label>Shift</label><div class="id-locked" id="fuel-shift-locked"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="id-locked-val" id="fuel-shift-val">—</span><span class="id-locked-sub">assigned</span></div><select id="fuel-shift-super" style="display:none;border-color:rgba(245,158,11,.4);color:var(--warn);" onchange="sSh('fuel',this.value)"><option value="Day">Day Shift</option><option value="Night">Night Shift</option></select><input type="hidden" id="fuel-shift" /></div>
+      <div class="field"><label>Date &amp; Time</label><div class="timestamp-pill"><div class="ts-dot"></div><span class="ts-display">—</span></div></div>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Tank Readings</div>
+    <div class="field"><label>Day Tank Reading (cm)</label><input type="number" id="fuel-day-pres" name="fuel_day_pres" placeholder="0.0" step="0.1" inputmode="decimal"/>
+      <div class="prev-ref" id="fuel-day-prev-ref">No previous reading</div></div>
+    <div class="field"><label>Main Tank Reading (cm)</label><input type="number" id="fuel-main-pres" name="fuel_main_pres" placeholder="0.0" step="0.1" inputmode="decimal"/>
+      <div class="prev-ref" id="fuel-main-prev-ref">No previous reading</div></div>
+    <div class="field"><label>Remarks</label><textarea name="fuel_remarks" placeholder="Fuel condition, leaks, abnormal observations..."></textarea></div>
+  </div>
+
+  <div class="photo-card"><div class="photo-card-title">Photo Documentation</div><div class="photo-grid g2"><div class="photo-slot"><label>Day Tank</label><input type="file" id="pf_fd" accept="image/*" capture="environment"/><div class="photo-prev" id="pf_fd_p"><img/></div></div><div class="photo-slot"><label>Main Tank</label><input type="file" id="pf_fm" accept="image/*" capture="environment"/><div class="photo-prev" id="pf_fm_p"><img/></div></div></div></div>
+  <button type="submit" class="submit-btn" id="fuelSubmitBtn"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>SUBMIT FUEL REPORT</button>
+</form></div></div>
+
+<!-- TAB 4: CHEM & SOFTENER -->
+<div class="tab-panel" id="panel-chemical"><div class="container"><form id="chemicalForm">
+  <div class="card"><div class="card-title">Identification</div>
+    <div class="field"><label>Plant <span class="required">*</span></label><select id="chem-plant" required><option value="" disabled selected>Select plant...</option><option value="HOREB">HOREB</option><option value="ARGAO">ARGAO</option></select></div>
+    <div class="field"><label>Technician</label><div class="id-locked"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="id-locked-val" id="chem-tech-val">—</span><span class="id-locked-sub">signed in</span></div><input type="hidden" id="chem-tech" /></div>
+    <div class="row-2">
+      <div class="field"><label>Shift</label><div class="id-locked" id="chem-shift-locked"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="id-locked-val" id="chem-shift-val">—</span><span class="id-locked-sub">assigned</span></div><select id="chem-shift-super" style="display:none;border-color:rgba(245,158,11,.4);color:var(--warn);" onchange="sSh('chem',this.value)"><option value="Day">Day Shift</option><option value="Night">Night Shift</option></select><input type="hidden" id="chem-shift" /></div>
+      <div class="field"><label>Date &amp; Time</label><div class="timestamp-pill"><div class="ts-dot"></div><span class="ts-display">—</span></div></div>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Chemical &amp; Softener Readings</div>
+    <div class="chem-table-wrap"><table class="chem-table"><thead><tr><th class="col-chem">Chemical</th><th>Present Level</th><th>Unit</th></tr></thead><tbody>
+      <tr><td><div class="chem-label">Scale Inhibitor</div></td><td><div class="chem-input-wrap"><input type="number" name="chem_si_pres" placeholder="0.0" step="0.01" inputmode="decimal"/></div></td><td><div style="font-family:Rajdhani,sans-serif;font-size:.82rem;font-weight:700;color:var(--muted);text-align:center;">Liters</div></td></tr>
+      <tr><td><div class="chem-label">Oxygen Scavenger</div></td><td><div class="chem-input-wrap"><input type="number" name="chem_os_pres" placeholder="0.0" step="0.01" inputmode="decimal"/></div></td><td><div style="font-family:Rajdhani,sans-serif;font-size:.82rem;font-weight:700;color:var(--muted);text-align:center;">Liters</div></td></tr>
+    </tbody></table></div>
+    <div class="field"><label>Remarks</label><textarea name="chem_remarks" placeholder="Note any abnormal levels, dosing issues, drum status..."></textarea></div>
+  </div>
+  <div class="card"><div class="card-title">Maintenance Checklist</div>
+    <div class="checklist-grid">
+      <div class="check-item"><span class="check-label">Refill Scale Inhibitor<span class="check-unit">(max 1 L)</span></span><div class="check-input-wrap"><input type="number" name="chk_si" placeholder="0" min="0" max="1" step="0.1" inputmode="decimal"/><span class="check-unit-tag">L</span></div></div>
+      <div class="check-item"><span class="check-label">Refill Oxygen Scavenger<span class="check-unit">(max 4 L)</span></span><div class="check-input-wrap"><input type="number" name="chk_os" placeholder="0" min="0" max="4" step="0.1" inputmode="decimal"/><span class="check-unit-tag">L</span></div></div>
+      <div class="check-item"><span class="check-label">Refill Salt<span class="check-unit">(max 50 kg)</span></span><div class="check-input-wrap"><input type="number" name="chk_salt" placeholder="0" min="0" max="50" step="0.5" inputmode="decimal"/><span class="check-unit-tag">kg</span></div></div>
+      <div class="check-item"><span class="check-label">Manual Regen<span class="check-unit">(max 4)</span></span><div class="check-input-wrap"><input type="number" name="chk_regen" placeholder="0" min="0" max="4" step="1" inputmode="numeric"/><span class="check-unit-tag">times</span></div></div>
+    </div>
+  </div>
+  <button type="button" class="replenish-btn" onclick="toggleReplenish()"><svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Log Chemical Replenishment</button>
+  <div class="replenish-section" id="replenishSection">
+    <div class="card-title">Chemical Replenishment</div>
+    <div class="replenish-grid">
+      <div class="replenish-item"><div class="replenish-item-title">Scale Inhibitor</div><div class="field"><label>Volume Added</label><div class="replenish-unit-row"><input type="number" name="chem_si_replenish" placeholder="0.0" step="0.01" inputmode="decimal" style="flex:1;"/><span class="replenish-unit-tag">Liters</span></div></div></div>
+      <div class="replenish-item"><div class="replenish-item-title">Oxygen Scavenger</div><div class="field"><label>Volume Added</label><div class="replenish-unit-row"><input type="number" name="chem_os_replenish" placeholder="0.0" step="0.01" inputmode="decimal" style="flex:1;"/><span class="replenish-unit-tag">Liters</span></div></div></div>
+    </div>
+    <div class="field" style="margin-top:.65rem;margin-bottom:0;"><label>Replenishment Remarks</label><textarea name="chem_replenish_remarks" placeholder="Batch no., supplier, condition of chemical, etc..."></textarea></div>
+  </div>
+
+  <div class="photo-card"><div class="photo-card-title">Photo Documentation</div><div class="photo-grid g2"><div class="photo-slot"><label>Photo 1</label><input type="file" id="pf_c1" accept="image/*" capture="environment"/><div class="photo-prev" id="pf_c1_p"><img/></div></div><div class="photo-slot"><label>Photo 2</label><input type="file" id="pf_c2" accept="image/*" capture="environment"/><div class="photo-prev" id="pf_c2_p"><img/></div></div><div class="photo-slot"><label>Photo 3</label><input type="file" id="pf_c3" accept="image/*" capture="environment"/><div class="photo-prev" id="pf_c3_p"><img/></div></div><div class="photo-slot"><label>Photo 4</label><input type="file" id="pf_c4" accept="image/*" capture="environment"/><div class="photo-prev" id="pf_c4_p"><img/></div></div><div class="photo-slot"><label>Photo 5</label><input type="file" id="pf_c5" accept="image/*" capture="environment"/><div class="photo-prev" id="pf_c5_p"><img/></div></div></div></div>
+  <button type="submit" class="submit-btn" id="chemSubmitBtn"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>SUBMIT CHEMICAL REPORT</button>
+</form></div></div>
+
+<!-- TAB 5: BOILER -->
+<div class="tab-panel" id="panel-boiler"><div class="container"><form id="boilerForm">
+  <div class="card"><div class="card-title">Identification</div>
+    <div class="field"><label>Plant <span class="required">*</span></label><select id="boiler-plant" required><option value="" disabled selected>Select plant...</option><option value="HOREB">HOREB</option><option value="ARGAO">ARGAO</option></select></div>
+    <div class="field"><label>Technician</label><div class="id-locked"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="id-locked-val" id="boiler-tech-val">—</span><span class="id-locked-sub">signed in</span></div><input type="hidden" id="boiler-tech" /></div>
+    <div class="row-2">
+      <div class="field"><label>Shift</label><div class="id-locked" id="boiler-shift-locked"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="id-locked-val" id="boiler-shift-val">—</span><span class="id-locked-sub">assigned</span></div><select id="boiler-shift-super" style="display:none;border-color:rgba(245,158,11,.4);color:var(--warn);" onchange="sSh('boiler',this.value)"><option value="Day">Day Shift</option><option value="Night">Night Shift</option></select><input type="hidden" id="boiler-shift" /></div>
+      <div class="field"><label>Date &amp; Time</label><div class="timestamp-pill"><div class="ts-dot"></div><span class="ts-display">—</span></div></div>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Boiler Parameters</div>
+    <div style="overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin-bottom:.5rem;">
+      <table style="width:100%;border-collapse:collapse;min-width:500px;">
+        <thead><tr style="background:var(--surface2);">
+          <th style="font-family:Rajdhani,sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);padding:.6rem .6rem;text-align:left;border-bottom:1px solid var(--border);border-right:1px solid var(--border);min-width:150px;">Parameter</th>
+          <th style="font-family:Rajdhani,sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);padding:.6rem .6rem;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);min-width:60px;">Unit</th>
+          <th style="font-family:Rajdhani,sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);padding:.6rem .6rem;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);min-width:70px;">Limit</th>
+          <th style="font-family:Rajdhani,sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);padding:.6rem .6rem;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);min-width:90px;">Reading</th>
+          <th style="font-family:Rajdhani,sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);padding:.6rem .6rem;text-align:left;border-bottom:1px solid var(--border);min-width:120px;">Remarks</th>
+        </tr></thead>
+        <tbody id="boilerTbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Overall Status</div>
+    <div class="field"><label>Boiler Status</label>
+      <div class="status-row">
+        <div class="status-btn ok" data-val="Normal" onclick="setBoilerStatus(this)">✓ Normal</div>
+        <div class="status-btn" data-val="Warning" onclick="setBoilerStatus(this)">⚠ Warning</div>
+        <div class="status-btn" data-val="Critical" onclick="setBoilerStatus(this)">✕ Critical</div>
+      </div>
+      <input type="hidden" id="boiler-status" value="Normal"/>
+    </div>
+    <div class="field"><label>General Remarks</label><textarea name="boiler_remarks" placeholder="Note any abnormal readings, unusual sounds, leaks, safety valve status..."></textarea></div>
+  </div>
+
+  <div class="photo-card"><div class="photo-card-title">Photo Documentation</div><div class="photo-grid g2"><div class="photo-slot"><label>Photo 1</label><input type="file" id="pf_b1" accept="image/*" capture="environment"/><div class="photo-prev" id="pf_b1_p"><img/></div></div><div class="photo-slot"><label>Photo 2</label><input type="file" id="pf_b2" accept="image/*" capture="environment"/><div class="photo-prev" id="pf_b2_p"><img/></div></div><div class="photo-slot"><label>Photo 3</label><input type="file" id="pf_b3" accept="image/*" capture="environment"/><div class="photo-prev" id="pf_b3_p"><img/></div></div><div class="photo-slot"><label>Photo 4</label><input type="file" id="pf_b4" accept="image/*" capture="environment"/><div class="photo-prev" id="pf_b4_p"><img/></div></div><div class="photo-slot"><label>Photo 5</label><input type="file" id="pf_b5" accept="image/*" capture="environment"/><div class="photo-prev" id="pf_b5_p"><img/></div></div></div></div>
+  <button type="submit" class="submit-btn" id="boilerSubmitBtn"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>SUBMIT BOILER REPORT</button>
+</form></div></div>
+
+<!-- TAB 6: PURCHASE -->
+<div class="tab-panel" id="panel-purchase"><div class="container"><form id="purchaseForm">
+  <div class="card"><div class="card-title">Identification</div>
+    <div class="field"><label>Plant <span class="required">*</span></label><select id="pr-plant" required><option value="" disabled selected>Select plant...</option><option value="HOREB">HOREB</option><option value="ARGAO">ARGAO</option></select></div>
+    <div class="field"><label>Requested By</label><div class="id-locked"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="id-locked-val" id="pr-tech-val">—</span><span class="id-locked-sub">signed in</span></div><input type="hidden" id="pr-tech" /></div>
+    <div class="row-2">
+      <div class="field"><label>Date &amp; Time</label><div class="timestamp-pill"><div class="ts-dot"></div><span class="ts-display">—</span></div></div>
+      <div class="field"><label>Priority</label><select id="pr-priority" name="pr_priority"><option value="Routine">Routine</option><option value="Urgent">Urgent</option><option value="Critical">Critical</option></select></div>
+    </div>
+  </div>
+  <div id="prItemList"></div>
+  <button type="button" class="add-device-btn" onclick="addPRItem()" style="margin-bottom:.9rem;"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Item</button>
+  <button type="submit" class="submit-btn" id="prSubmitBtn"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>SUBMIT PURCHASE REQUEST</button>
+</form></div></div>
+
+
+<!-- TAB: ROLLS & DIE MONITORING (Pellet Mill Operator) -->
+<div class="tab-panel" id="panel-rolldie"><div class="container"><form id="rolldieForm">
+  <div class="card"><div class="card-title">Identification</div>
+    <div class="field"><label>Plant <span class="required">*</span></label>
+      <select id="rd-plant" required onchange="onRdPlantChange()">
+        <option value="" disabled selected>Select plant...</option>
+        <option value="HOREB">HOREB</option><option value="ARGAO">ARGAO</option>
+      </select>
+    </div>
+    <div class="field"><label>Operator</label>
+      <div class="id-locked"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="id-locked-val" id="rd-tech-val">—</span><span class="id-locked-sub">signed in</span></div>
+      <input type="hidden" id="rd-tech" />
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Shift</label>
+        <div class="id-locked" id="rd-shift-locked"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="id-locked-val" id="rd-shift-val">—</span><span class="id-locked-sub">auto</span></div>
+        <input type="hidden" id="rd-shift" />
+      </div>
+      <div class="field"><label>Date &amp; Time</label>
+        <div class="timestamp-pill"><div class="ts-dot"></div><span class="ts-display">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card"><div class="card-title">Pelleting Report</div>
+    <div class="field"><label>Feed Type <span class="required">*</span></label>
+      <select id="rd_feedtype_sel" name="rd_feedtype" required><option value="" disabled selected>Select plant first...</option></select>
+    </div>
+    <div class="field"><label>Running Amps <span class="required">*</span></label>
+      <input type="text" name="rd_amps" placeholder="e.g. 130-140 or 155" required />
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Conditioner Feedrate</label>
+        <input type="text" name="rd_feedrate" placeholder="e.g. 12.0 or 16 Hertz" />
+      </div>
+      <div class="field" id="rd-cond1-wrap"><label>Conditioner Temp (°C)</label>
+        <input type="number" name="rd_cond1_temp" placeholder="0.0" step="0.1" inputmode="decimal" />
+      </div>
+    </div>
+    <div class="field" id="rd-cond2-wrap" style="display:none;"><label>Conditioner 2 Temp (°C)</label>
+      <input type="number" name="rd_cond2_temp" placeholder="0.0" step="0.1" inputmode="decimal" />
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Die Size <span class="required">*</span></label>
+        <select id="rd_die_size_sel" name="rd_die_size" required onchange="onDieSizeChange()"><option value="" disabled selected>Select size...</option></select>
+      </div>
+      <div class="field" id="rd-diecode-wrap"><label>Die Code</label>
+        <input type="text" id="rd_die_code" name="rd_die_code" placeholder="Auto-filled" readonly style="cursor:not-allowed;color:var(--muted);" />
+      </div>
+    </div>
+    <div class="field"><label>Remarks</label>
+      <textarea name="rd_remarks" placeholder="e.g. Normal Operation, roll wear, breakdowns..."></textarea>
+    </div>
+  </div>
+
+  <div class="card"><div class="card-title">Photo Documentation</div>
+    <div class="photo-grid g2">
+      <div class="photo-slot"><label>Photo 1</label>
+        <input type="file" id="pf_rd1" accept="image/*" capture="environment"/>
+        <div class="photo-prev" id="pf_rd1_p"><img/></div></div>
+      <div class="photo-slot"><label>Photo 2</label>
+        <input type="file" id="pf_rd2" accept="image/*" capture="environment"/>
+        <div class="photo-prev" id="pf_rd2_p"><img/></div></div>
+    </div>
+  </div>
+
+  <button type="submit" class="submit-btn" id="rdSubmitBtn">
+    <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    SUBMIT ROLLS &amp; DIE REPORT
+  </button>
+</form></div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+  // Register service worker for PWA install + smart cache
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',function(){
+      navigator.serviceWorker.register('./sw.js').catch(function(){});
+    });
+  }
+
+  // PWA warm-up: wait for service worker to fully activate before first JSONP call
+  var swReady = false;
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.ready.then(function(){ swReady=true; });
+    setTimeout(function(){ swReady=true; }, 2000); // fallback timeout
+  } else {
+    swReady = true;
+  }
+
+
+  // PMS-v6-TRIAL — adds Rolls & Die tab + PMO role + time-based shift auto-detect
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxmIadM5HDk4S9czfoqXVH4SLMVZo0anhaxbV7MQzpqz9YLnsLuSObs_8wAB9EWSwwp/exec';
+  const SPIN_SVG = '<svg viewBox="0 0 24 24" style="animation:spin 1s linear infinite;width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2.2"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>';
+  const SEND_SVG = '<svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+
+  var PANELS=['electrical','econsum','vibration','fuel','chemical','boiler','purchase','rolldie'];
+  function switchTab(id){PANELS.forEach(function(p){document.getElementById('panel-'+p).classList.toggle('active',p===id);document.getElementById('tab-'+p).classList.toggle('active',p===id);});window.scrollTo({top:0,behavior:'smooth'});}
+
+  var MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],DA=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function pad(n){return String(n).padStart(2,'0');}
+  function tick(){var d=new Date(),s=DA[d.getDay()]+' '+MO[d.getMonth()]+' '+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());document.querySelectorAll('.ts-display').forEach(function(el){el.textContent=s;});}
+  tick();setInterval(tick,1000);
+
+  function showToast(msg,err){var t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(err?' error':'');t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3500);}
+
+  function submitViaJSONP(params,onSuccess,onError){
+    var cbName='cb_'+Date.now(),script=document.createElement('script');
+    var timeout=setTimeout(function(){cleanup();onError('Timeout');},10000);
+    function cleanup(){clearTimeout(timeout);delete window[cbName];if(script.parentNode)script.parentNode.removeChild(script);}
+    window[cbName]=function(res){cleanup();if(res.result==='success')onSuccess();else onError(res.message||'Error');};
+    params.callback=cbName;
+    var qs=Object.keys(params).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(typeof params[k]==='object'?JSON.stringify(params[k]):params[k]);}).join('&');
+    script.src=SCRIPT_URL+'?'+qs;
+    script.onerror=function(){cleanup();onError('Network error');};
+    document.head.appendChild(script);
+  }
+
+
+  function prevPhoto(inp,prevId){
+    var w=document.getElementById(prevId);if(!w)return;
+    var img=w.querySelector('img');
+    if(inp.files&&inp.files[0]){var r=new FileReader();r.onload=function(e){img.src=e.target.result;w.style.display='block';};r.readAsDataURL(inp.files[0]);}
+    else w.style.display='none';
+  }
+
+  function attachPhotoListeners(){
+    var ids=['pf_vib','pf_fd','pf_fm','pf_c1','pf_c2','pf_c3','pf_c4','pf_c5','pf_b1','pf_b2','pf_b3','pf_b4','pf_b5','pf_ec1','pf_ec2','pf_rd1','pf_rd2'];
+    ids.forEach(function(id){
+      var el=document.getElementById(id);
+      if(el) el.addEventListener('change',function(){prevPhoto(this,id+'_p');});
+    });
+  }
+
+
+  // ── CHANGE PASSWORD ──
+  function openPwChange(){
+    document.getElementById('pwCurrent').value='';
+    document.getElementById('pwNew').value='';
+    document.getElementById('pwConfirm').value='';
+    document.getElementById('pwError').classList.remove('show');
+    document.getElementById('pwOverlay').classList.add('show');
+  }
+  function closePwChange(){
+    document.getElementById('pwOverlay').classList.remove('show');
+  }
+  function savePassword(){
+    var cur=document.getElementById('pwCurrent').value;
+    var neu=document.getElementById('pwNew').value;
+    var con=document.getElementById('pwConfirm').value;
+    var err=document.getElementById('pwError');
+    var btn=document.getElementById('pwSaveBtn');
+    if(!cur||!neu||!con){err.textContent='Fill in all fields.';err.classList.add('show');return;}
+    if(neu.length<4){err.textContent='New password must be at least 4 characters.';err.classList.add('show');return;}
+    if(neu!==con){err.textContent='New passwords do not match.';err.classList.add('show');return;}
+    if(!currentUser){err.textContent='Not logged in.';err.classList.add('show');return;}
+    btn.disabled=true;btn.textContent='Saving...';err.classList.remove('show');
+
+    var cbName='pwCb_'+Date.now(),s=document.createElement('script');
+    var timeout=setTimeout(function(){cleanup();err.textContent='Timeout. Try again.';err.classList.add('show');btn.disabled=false;btn.textContent='Save';},15000);
+    function cleanup(){clearTimeout(timeout);delete window[cbName];if(s.parentNode)s.parentNode.removeChild(s);}
+    window[cbName]=function(res){
+      cleanup();
+      if(res&&res.result==='success'){
+        closePwChange();
+        showToast('Password updated successfully!');
+      } else {
+        err.textContent=res&&res.message?res.message:'Failed. Try again.';
+        err.classList.add('show');
+      }
+      btn.disabled=false;btn.textContent='Save';
+    };
+    s.onerror=function(){cleanup();err.textContent='Network error.';err.classList.add('show');btn.disabled=false;btn.textContent='Save';};
+    s.src=SCRIPT_URL+'?action=changePassword'
+         +'&username='+encodeURIComponent(currentUser.name)
+         +'&currentPw='+encodeURIComponent(cur)
+         +'&newPw='+encodeURIComponent(neu)
+         +'&callback='+cbName;
+    document.head.appendChild(s);
+  }
+
+
+  /* ══════════════════════════════════════
+     ELECTRIC CONSUMPTION
+  ══════════════════════════════════════ */
+  var CURRENT_METERS = [];
+
+  function loadElectricMeters(plant){
+    if(!plant) return;
+    var list = document.getElementById('ec-meter-list');
+    list.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.8rem;">Loading meters and previous readings...</div>';
+    var cb='ecm_'+Date.now(), s=document.createElement('script');
+    var timer=setTimeout(function(){
+      clearTimeout(timer); delete window[cb];
+      if(s.parentNode) s.parentNode.removeChild(s);
+      list.innerHTML='<div style="text-align:center;padding:1rem;color:var(--danger);font-size:.8rem;">Failed to load. Try again.</div>';
+    }, 8000);
+    s.onerror=function(){clearTimeout(timer);delete window[cb];if(s.parentNode)s.parentNode.removeChild(s);};
+    window[cb]=function(res){
+      clearTimeout(timer); delete window[cb];
+      if(s.parentNode) s.parentNode.removeChild(s);
+      if(res && res.result==='success' && res.meters){
+        CURRENT_METERS = res.meters;
+        renderMeterCards(res.meters);
+      } else {
+        list.innerHTML='<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.8rem;">No meters configured for '+plant+'.</div>';
+      }
+    };
+    s.src=SCRIPT_URL+'?action=getElectricMeters&plant='+encodeURIComponent(plant)+'&callback='+cb;
+    document.head.appendChild(s);
+  }
+
+  function renderMeterCards(meters){
+    var list = document.getElementById('ec-meter-list');
+    list.innerHTML = '';
+    meters.forEach(function(m, idx){
+      var card = document.createElement('div');
+      card.className = 'meter-card';
+      var prevText = m.prev_reading
+        ? 'Previous: <span class="prev-ref-val">'+m.prev_reading+' kWh</span> ('+m.prev_date+')'
+        : 'No previous reading';
+      card.innerHTML =
+        '<div class="meter-name">'+m.name+'</div>'+
+        '<input type="number" name="meter_'+idx+'" data-meter="'+m.name+'" placeholder="0.00" step="0.01" inputmode="decimal" style="margin-bottom:4px;"/>'+
+        '<div class="prev-ref">'+prevText+'</div>';
+      list.appendChild(card);
+    });
+  }
+
+  document.getElementById('econsumForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var btn = document.getElementById('ecSubmitBtn');
+    btn.disabled = true; btn.innerHTML = SPIN_SVG+' Submitting...';
+    var now = new Date(), form = document.getElementById('econsumForm');
+    var readings = {};
+    CURRENT_METERS.forEach(function(m, idx){
+      var input = form.querySelector('[name="meter_'+idx+'"]');
+      readings[m.name] = input ? input.value : '';
+    });
+    var params = {
+      type: 'econsum',
+      timestamp: now.toISOString(),
+      date: now.toLocaleDateString('en-PH'),
+      time: now.toLocaleTimeString('en-PH'),
+      plant: document.getElementById('ec-plant').value,
+      technician: document.getElementById('ec-tech').value,
+      shift: document.getElementById('ec-shift').value,
+      readings: JSON.stringify(readings),
+      remarks: form.querySelector('[name="ec_remarks"]').value
+    };
+    submitViaJSONP(params,
+      function(){
+        showToast('Consumption report submitted!');
+        form.reset();
+        document.getElementById('ec-meter-list').innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem;">Select a plant to load meters...</div>';
+        window.scrollTo({top:0,behavior:'smooth'});
+        btn.disabled = false; btn.innerHTML = SEND_SVG+' SUBMIT CONSUMPTION REPORT';
+      },
+      function(){
+        showToast('Failed.', true);
+        btn.disabled = false; btn.innerHTML = SEND_SVG+' SUBMIT CONSUMPTION REPORT';
+      }
+    );
+  });
+
+  // Also load fuel previous readings when fuel plant changes
+  var fuelPlantEl = document.getElementById('fuel-plant');
+  if(fuelPlantEl){
+    fuelPlantEl.addEventListener('change', function(){ loadFuelPrevReadings(this.value); });
+  }
+
+  function loadFuelPrevReadings(plant){
+    if(!plant) return;
+    var cb='fp_'+Date.now(), s=document.createElement('script');
+    var timer=setTimeout(function(){clearTimeout(timer);delete window[cb];if(s.parentNode)s.parentNode.removeChild(s);},6000);
+    s.onerror=function(){clearTimeout(timer);delete window[cb];if(s.parentNode)s.parentNode.removeChild(s);};
+    window[cb]=function(res){
+      clearTimeout(timer); delete window[cb];
+      if(s.parentNode) s.parentNode.removeChild(s);
+      if(res && res.result==='success'){
+        var dayRef = document.getElementById('fuel-day-prev-ref');
+        var mainRef = document.getElementById('fuel-main-prev-ref');
+        if(dayRef){
+          dayRef.innerHTML = res.dayPrev
+            ? 'Previous: <span class="prev-ref-val">'+res.dayPrev+' cm</span> ('+res.dayDate+')'
+            : 'No previous reading';
+        }
+        if(mainRef){
+          mainRef.innerHTML = res.mainPrev
+            ? 'Previous: <span class="prev-ref-val">'+res.mainPrev+' cm</span> ('+res.mainDate+')'
+            : 'No previous reading';
+        }
+      }
+    };
+    s.src=SCRIPT_URL+'?action=getFuelPrev&plant='+encodeURIComponent(plant)+'&callback='+cb;
+    document.head.appendChild(s);
+  }
+
+
+
+  /* ══════════════════════════════════════
+     ROLLS & DIE MONITORING (PMO)
+  ══════════════════════════════════════ */
+
+  function detectShiftByTime(){
+    var h = new Date().getHours();
+    // 7am (07:00) to 7pm (19:00) = 1st Shift, else 2nd Shift
+    return (h >= 7 && h < 19) ? '1st Shift' : '2nd Shift';
+  }
+
+
+  var DIE_MAP = {};
+
+  function loadRollsDieConfig(plant){
+    if(!plant) return;
+    var ftSel = document.getElementById('rd_feedtype_sel');
+    var dsSel = document.getElementById('rd_die_size_sel');
+    var dcInp = document.getElementById('rd_die_code');
+    if(ftSel) ftSel.innerHTML = '<option value="" disabled selected>Loading...</option>';
+    if(dsSel) dsSel.innerHTML = '<option value="" disabled selected>Loading...</option>';
+    if(dcInp) dcInp.value = '';
+
+    var cb='rdc_'+Date.now(), s=document.createElement('script');
+    var timer=setTimeout(function(){clearTimeout(timer);delete window[cb];if(s.parentNode)s.parentNode.removeChild(s);},6000);
+    s.onerror=function(){clearTimeout(timer);delete window[cb];if(s.parentNode)s.parentNode.removeChild(s);};
+    window[cb]=function(res){
+      clearTimeout(timer); delete window[cb];
+      if(s.parentNode) s.parentNode.removeChild(s);
+      if(res && res.result==='success'){
+        // Populate feed types
+        if(ftSel){
+          ftSel.innerHTML = '<option value="" disabled selected>Select feed type...</option>';
+          (res.feedtypes||[]).forEach(function(ft){
+            var o=document.createElement('option'); o.value=ft; o.textContent=ft;
+            ftSel.appendChild(o);
+          });
+        }
+        // Populate die sizes and store mapping
+        DIE_MAP = res.dieMap || {};
+        if(dsSel){
+          dsSel.innerHTML = '<option value="" disabled selected>Select size...</option>';
+          Object.keys(DIE_MAP).sort().forEach(function(sz){
+            var o=document.createElement('option'); o.value=sz; o.textContent=sz;
+            dsSel.appendChild(o);
+          });
+        }
+      } else {
+        if(ftSel) ftSel.innerHTML = '<option value="" disabled selected>No feed types configured</option>';
+        if(dsSel) dsSel.innerHTML = '<option value="" disabled selected>No die sizes configured</option>';
+      }
+    };
+    s.src = SCRIPT_URL + '?action=getRollsDieConfig&plant='+encodeURIComponent(plant)+'&callback='+cb;
+    document.head.appendChild(s);
+  }
+
+  function onDieSizeChange(){
+    var sz = document.getElementById('rd_die_size_sel').value;
+    var codeInp = document.getElementById('rd_die_code');
+    if(codeInp) codeInp.value = DIE_MAP[sz] || '';
+  }
+
+
+  function onRdPlantChange(){
+    var plant = document.getElementById('rd-plant').value;
+    var cond2 = document.getElementById('rd-cond2-wrap');
+    if(plant === 'ARGAO'){
+      cond2.style.display = 'block';
+    } else {
+      cond2.style.display = 'none';
+      var c2 = cond2.querySelector('input'); if(c2) c2.value = '';
+    }
+    if(plant) loadRollsDieConfig(plant);
+  }
+
+  document.getElementById('rolldieForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var btn = document.getElementById('rdSubmitBtn');
+    btn.disabled = true; btn.innerHTML = SPIN_SVG+' Submitting...';
+    var now = new Date(), form = document.getElementById('rolldieForm');
+    function g(n){var el=form.querySelector('[name="'+n+'"]');return el?el.value:'';}
+    var params = {
+      type: 'rolls_die',
+      timestamp: now.toISOString(),
+      date: now.toLocaleDateString('en-PH'),
+      time: now.toLocaleTimeString('en-PH'),
+      plant: document.getElementById('rd-plant').value,
+      operator: document.getElementById('rd-tech').value,
+      shift: document.getElementById('rd-shift').value || detectShiftByTime(),
+      feedtype: g('rd_feedtype'),
+      amps: g('rd_amps'),
+      feedrate: g('rd_feedrate'),
+      cond1_temp: g('rd_cond1_temp'),
+      cond2_temp: g('rd_cond2_temp'),
+      die_size: g('rd_die_size'),
+      die_code: g('rd_die_code'),
+      remarks: g('rd_remarks')
+    };
+    submitViaJSONP(params,
+      function(){
+        showToast('Rolls & Die report submitted!');
+        form.reset();
+        document.getElementById('rd-cond2-wrap').style.display = 'none';
+        // Restore auto-detected shift
+        var s = detectShiftByTime();
+        document.getElementById('rd-shift').value = s;
+        document.getElementById('rd-shift-val').textContent = s;
+        window.scrollTo({top:0,behavior:'smooth'});
+        btn.disabled = false; btn.innerHTML = SEND_SVG+' SUBMIT ROLLS & DIE REPORT';
+      },
+      function(){
+        showToast('Failed.', true);
+        btn.disabled = false; btn.innerHTML = SEND_SVG+' SUBMIT ROLLS & DIE REPORT';
+      }
+    );
+  });
+
+  /* ══════════════════════════════════════
+     PMO ROLE — HIDE ALL OTHER TABS
+  ══════════════════════════════════════ */
+  function applyPmoView(user){
+    // Hide every tab button except Rolls & Die
+    var allTabs = ['electrical','econsum','vibration','fuel','chemical','boiler','purchase'];
+    allTabs.forEach(function(t){
+      var btn = document.getElementById('tab-'+t);
+      var panel = document.getElementById('panel-'+t);
+      if(btn) btn.style.display = 'none';
+      if(panel){ panel.classList.remove('active'); panel.style.display = 'none'; }
+    });
+    // Show Rolls & Die
+    var rdBtn = document.getElementById('tab-rolldie');
+    var rdPanel = document.getElementById('panel-rolldie');
+    if(rdBtn){ rdBtn.style.display = ''; rdBtn.classList.add('active'); }
+    if(rdPanel){ rdPanel.classList.add('active'); rdPanel.style.display = 'block'; }
+
+    // Auto-fill PMO identification
+    document.getElementById('rd-tech').value = user.name || '';
+    document.getElementById('rd-tech-val').textContent = user.name || '—';
+    var shift = detectShiftByTime();
+    document.getElementById('rd-shift').value = shift;
+    document.getElementById('rd-shift-val').textContent = shift;
+    // Set plant from user record (if assigned)
+    if(user.plant){
+      var pe = document.getElementById('rd-plant');
+      for(var i=0;i<pe.options.length;i++){
+        if(pe.options[i].value===user.plant){ pe.selectedIndex=i; break; }
+      }
+      onRdPlantChange();
+      loadRollsDieConfig(user.plant);
+    }
+  }
+
+  function restoreTechView(){
+    var allTabs = ['electrical','econsum','vibration','fuel','chemical','boiler','purchase','rolldie'];
+    allTabs.forEach(function(t){
+      var btn = document.getElementById('tab-'+t);
+      var panel = document.getElementById('panel-'+t);
+      if(btn) btn.style.display = '';
+      if(panel) panel.style.display = '';
+    });
+  }
+
+  // Refresh shift display every minute in case shift changes while form is open
+  setInterval(function(){
+    if(currentUser && currentUser.role === 'PMO'){
+      var s = detectShiftByTime();
+      var el = document.getElementById('rd-shift');
+      var v = document.getElementById('rd-shift-val');
+      if(el) el.value = s;
+      if(v) v.textContent = s;
+    }
+  }, 60000);
+
+
+  // LOGIN
+  var currentUser=null;
+  document.getElementById('loginUser').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+  document.getElementById('loginPass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+
+  function doLogin(){
+    var username=document.getElementById('loginUser').value.trim();
+    var password=document.getElementById('loginPass').value;
+    var btn=document.getElementById('loginBtn'),errEl=document.getElementById('loginError');
+    if(!username||!password){errEl.textContent='Please enter both fields.';errEl.classList.add('show');return;}
+    btn.disabled=true;btn.innerHTML=SPIN_SVG+' Signing in...';errEl.classList.remove('show');
+    var attempt = 0;
+    function tryLogin() {
+      attempt++;
+      var cbName='loginCb_'+Date.now()+'_'+attempt, s=document.createElement('script');
+      var timeout=setTimeout(function(){cleanup();if(attempt<2){tryLogin();}else{loginFailed('Connection timeout. Check internet.');}},15000);
+      function cleanup(){clearTimeout(timeout);delete window[cbName];if(s.parentNode)s.parentNode.removeChild(s);}
+      window[cbName]=function(res){cleanup();if(res&&res.result==='success'&&res.user){loginSuccess(res.user);}else{loginFailed(res&&res.message?res.message:'Incorrect username or password.');}};
+      s.onerror=function(){cleanup();if(attempt<2){setTimeout(tryLogin,500);}else{loginFailed('Network error. Try again in a moment.');}};
+      s.src=SCRIPT_URL+'?action=login&username='+encodeURIComponent(username)+'&password='+encodeURIComponent(password)+'&callback='+cbName;
+      document.head.appendChild(s);
+    }
+    tryLogin();
+  }
+
+  function loginSuccess(user){
+    currentUser=user;
+    var isPmo = user.role === 'PMO';
+    ['elec','ec','vib','fuel','chem','boiler','pr'].forEach(function(prefix){
+      var techEl=document.getElementById(prefix+'-tech'),techVal=document.getElementById(prefix+'-tech-val');
+      var shiftEl=document.getElementById(prefix+'-shift'),shiftVal=document.getElementById(prefix+'-shift-val');
+      if(techEl)techEl.value=user.name||'';if(techVal)techVal.textContent=user.name||'—';
+      if(shiftEl)shiftEl.value=user.shift||'';if(shiftVal)shiftVal.textContent=(user.shift||'—')+' Shift';
+      var plantEl=document.getElementById(prefix+'-plant');
+      if(plantEl&&user.plant){for(var i=0;i<plantEl.options.length;i++){if(plantEl.options[i].value===user.plant){plantEl.selectedIndex=i;break;}}}
+    });
+    var isSuper=user.role==='SUPER';
+    ['elec','ec','vib','fuel','chem','boiler','pr'].forEach(function(p){
+      var plantEl=document.getElementById(p+'-plant');
+      var shiftLocked=document.getElementById(p+'-shift-locked');
+      var shiftSuper=document.getElementById(p+'-shift-super');
+      if(isSuper){
+        // Plant stays as select (already editable)
+        if(plantEl) plantEl.style.borderColor='rgba(245,158,11,.4)';
+        // Swap shift: hide locked, show editable select
+        if(shiftLocked) shiftLocked.style.display='none';
+        if(shiftSuper){
+          shiftSuper.style.display='flex';
+          shiftSuper.value=user.shift||'Day';
+          document.getElementById(p+'-shift').value=shiftSuper.value;
+        }
+      } else {
+        // Normal: keep plant select but auto-select and disable
+        if(plantEl){plantEl.style.borderColor='';plantEl.disabled=true;}
+        if(shiftLocked) shiftLocked.style.display='flex';
+        if(shiftSuper) shiftSuper.style.display='none';
+      }
+    });
+    document.getElementById('badgeName').innerHTML=user.name+(isSuper?'<span class="super-badge">★ SUPER</span>':'');
+    if(isPmo){ applyPmoView(user); }
+    else { restoreTechView(); }
+    loadDeviceConfig();
+    if(user.plant){
+      setTimeout(function(){
+        loadBoilerConfig(user.plant);
+        loadElectricMeters(user.plant);
+        loadFuelPrevReadings(user.plant);
+      },500);
+    }
+    document.getElementById('userBadge').style.display='flex';
+    var overlay=document.getElementById('loginOverlay');
+    overlay.classList.add('hiding');setTimeout(function(){overlay.classList.add('hidden');},400);
+    document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';
+    document.getElementById('loginBtn').disabled=false;
+    document.getElementById('loginBtn').innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" style="stroke:#fff;fill:none;stroke-width:2.2;flex-shrink:0;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> SIGN IN';
+    showToast('Welcome, '+user.name+'!');
+  }
+
+  function loginFailed(msg){
+    document.getElementById('loginError').textContent=msg;document.getElementById('loginError').classList.add('show');
+    document.getElementById('loginBtn').disabled=false;
+    document.getElementById('loginBtn').innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" style="stroke:#fff;fill:none;stroke-width:2.2;flex-shrink:0;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> SIGN IN';
+    var card=document.querySelector('.login-card');card.style.animation='none';card.offsetHeight;card.style.animation='shake .35s ease';
+  }
+
+  function doLogout(){
+    currentUser=null;
+    restoreTechView();
+    ['elec','ec','vib','fuel','chem','boiler','pr'].forEach(function(p){
+      var pEl=document.getElementById(p+'-plant');
+      if(pEl){pEl.disabled=false;pEl.style.borderColor='';pEl.selectedIndex=0;}
+      var sl=document.getElementById(p+'-shift-locked');if(sl)sl.style.display='flex';
+      var ss=document.getElementById(p+'-shift-super');if(ss)ss.style.display='none';
+    });
+    ['elec','ec','vib','fuel','chem','boiler','pr'].forEach(function(prefix){
+      ['tech','shift'].forEach(function(f){var el=document.getElementById(prefix+'-'+f);if(el)el.value='';var v=document.getElementById(prefix+'-'+f+'-val');if(v)v.textContent='—';});
+    });
+    document.getElementById('userBadge').style.display='none';
+    var o=document.getElementById('loginOverlay');o.classList.remove('hiding','hidden');
+    showToast('Signed out.');
+  }
+
+  // LINE MONITORING
+  var devCount=0;
+  var DEV_TYPES=['Breaker','Soft Starter','Contactor','Auxiliaries','Motor'];
+  var DEV_NAMES={};
+
+  function loadDeviceConfig(){
+    var cb='dc_'+Date.now(),s=document.createElement('script');
+    var t=setTimeout(function(){delete window[cb];if(s.parentNode)s.parentNode.removeChild(s);},6000);
+    s.onerror=function(){clearTimeout(t);delete window[cb];if(s.parentNode)s.parentNode.removeChild(s);};
+    window[cb]=function(r){clearTimeout(t);delete window[cb];if(s.parentNode)s.parentNode.removeChild(s);
+      if(r&&r.result==='success'){if(r.types)DEV_TYPES=r.types;if(r.names)DEV_NAMES=r.names;}
+      refreshDeviceTypeSelects();
+      populateAllDeviceNames();
+    };
+    s.src=SCRIPT_URL+'?action=getDeviceConfig&callback='+cb;
+    document.head.appendChild(s);
+  }
+
+  function refreshDeviceTypeSelects(){
+    document.querySelectorAll('[name^="d_type_"]').forEach(function(sel){
+      var cur=sel.value;
+      sel.innerHTML='<option value="">Select type...</option>';
+      DEV_TYPES.forEach(function(t){var o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
+      if(cur) sel.value=cur;
+    });
+  }
+
+  function onTypeChange(sel,id){
+    var ns=document.getElementById('dns_'+id);
+    if(!ns)return;
+    // Collect ALL device names from all types (union)
+    var allNames=[];
+    Object.keys(DEV_NAMES).forEach(function(t){
+      (DEV_NAMES[t]||[]).forEach(function(n){
+        if(allNames.indexOf(n)===-1) allNames.push(n);
+      });
+    });
+    ns.innerHTML='<option value="">Select device...</option>';
+    allNames.forEach(function(n){var o=document.createElement('option');o.value=n;o.textContent=n;ns.appendChild(o);});
+  }
+
+  function populateAllDeviceNames(){
+    var allNames=[];
+    Object.keys(DEV_NAMES).forEach(function(t){
+      (DEV_NAMES[t]||[]).forEach(function(n){
+        if(allNames.indexOf(n)===-1) allNames.push(n);
+      });
+    });
+    document.querySelectorAll('[id^="dns_"]').forEach(function(sel){
+      var cur=sel.value;
+      sel.innerHTML='<option value="">Select device...</option>';
+      allNames.forEach(function(n){var o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
+      if(cur) sel.value=cur;
+    });
+  }
+
+
+
+  function sPl(prefix,val){var el=document.getElementById(prefix+'-plant');if(el){for(var i=0;i<el.options.length;i++){if(el.options[i].value===val){el.selectedIndex=i;break;}}}}
+  function sSh(prefix,val){var el=document.getElementById(prefix+'-shift');if(el)el.value=val;var v=document.getElementById(prefix+'-shift-val');if(v)v.textContent=val+' Shift';}
+
+  function addDevice(){
+    devCount++;
+    var id=devCount,wrap=document.createElement('div');
+    wrap.className='device-card';wrap.id='dc-'+id;
+    var typeOpts='<option value="">Select type...</option>';
+    DEV_TYPES.forEach(function(t){typeOpts+='<option value="'+t+'">'+t+'</option>';});
+    wrap.innerHTML=
+      '<div class="device-card-header"><div class="device-num">Device '+id+'</div>'+
+      '<button type="button" class="del-btn" onclick="removeDevice('+id+')" '+(id===1?'disabled':'')+'>'+
+      '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>'+
+      '<div class="device-card-body">'+
+      '<div class="row-2">'+
+        '<div class="field"><label>Device Type</label>'+
+          '<select name="d_type_'+id+'" onchange="onTypeChange(this,'+id+')">'+typeOpts+'</select></div>'+
+        '<div class="field"><label>Device Name</label>'+
+          '<select id="dns_'+id+'" name="d_device_'+id+'"><option value="">Select device...</option></select></div>'+
+      '</div>'+
+      '<div class="reading-group"><div class="reading-group-title">Voltage (V)</div><div class="readings-3">'+
+        '<div class="reading-cell"><div class="rc-label">V<sub>AB</sub></div><input type="number" name="d_vAB_'+id+'" placeholder="0.0" step="any" inputmode="decimal"/><div class="rc-unit">Volts</div></div>'+
+        '<div class="reading-cell"><div class="rc-label">V<sub>BC</sub></div><input type="number" name="d_vBC_'+id+'" placeholder="0.0" step="any" inputmode="decimal"/><div class="rc-unit">Volts</div></div>'+
+        '<div class="reading-cell"><div class="rc-label">V<sub>CA</sub></div><input type="number" name="d_vCA_'+id+'" placeholder="0.0" step="any" inputmode="decimal"/><div class="rc-unit">Volts</div></div>'+
+      '</div></div>'+
+      '<div class="reading-group"><div class="reading-group-title">Current (A)</div><div class="readings-3">'+
+        '<div class="reading-cell"><div class="rc-label">I<sub>A</sub></div><input type="number" name="d_iA_'+id+'" placeholder="0.0" step="any" inputmode="decimal"/><div class="rc-unit">Amps</div></div>'+
+        '<div class="reading-cell"><div class="rc-label">I<sub>B</sub></div><input type="number" name="d_iB_'+id+'" placeholder="0.0" step="any" inputmode="decimal"/><div class="rc-unit">Amps</div></div>'+
+        '<div class="reading-cell"><div class="rc-label">I<sub>C</sub></div><input type="number" name="d_iC_'+id+'" placeholder="0.0" step="any" inputmode="decimal"/><div class="rc-unit">Amps</div></div>'+
+      '</div></div>'+
+      '<div class="photo-card"><div class="photo-card-title">Photo Documentation</div>'+
+        '<div class="photo-grid g2">'+
+          '<div class="photo-slot"><label>Voltage Photo</label>'+
+          '<input type="file" id="pp_v_'+id+'_in" accept="image/*" capture="environment"/>'+
+          '<div class="photo-prev" id="pp_v_'+id+'"><img/></div></div>'+
+          '<div class="photo-slot"><label>Current Photo</label>'+
+          '<input type="file" id="pp_i_'+id+'_in" accept="image/*" capture="environment"/>'+
+          '<div class="photo-prev" id="pp_i_'+id+'"><img/></div></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="field"><label>Status</label><div class="status-row">'+
+        '<div class="status-btn ok" data-id="'+id+'" data-val="Normal" onclick="setStatus(this)">✓ Normal</div>'+
+        '<div class="status-btn" data-id="'+id+'" data-val="Warning" onclick="setStatus(this)">⚠ Warning</div>'+
+        '<div class="status-btn" data-id="'+id+'" data-val="Critical" onclick="setStatus(this)">✕ Critical</div>'+
+      '</div><input type="hidden" name="d_status_'+id+'" value="Normal"/></div>'+
+      '<div class="field"><label>Remarks</label><textarea name="d_remarks_'+id+'" placeholder="Observations..."></textarea></div>'+
+      '</div>';
+    document.getElementById('deviceList').appendChild(wrap);
+    populateAllDeviceNames();
+    var pv=document.getElementById('pp_v_'+id+'_in');
+    if(pv) pv.addEventListener('change',function(){prevPhoto(this,'pp_v_'+id);});
+    var pi=document.getElementById('pp_i_'+id+'_in');
+    if(pi) pi.addEventListener('change',function(){prevPhoto(this,'pp_i_'+id);});
+    updateDel();wrap.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  function removeDevice(id){var el=document.getElementById('dc-'+id);if(el)el.remove();updateDel();document.querySelectorAll('#deviceList .device-card').forEach(function(c,i){c.querySelector('.device-num').textContent='Device '+(i+1);});}
+  function updateDel(){var cards=document.querySelectorAll('#deviceList .device-card');cards.forEach(function(c){c.querySelector('.del-btn').disabled=cards.length===1;});}
+  function setStatus(el){var id=el.dataset.id;el.closest('.device-card-body').querySelectorAll('.status-btn').forEach(function(b){b.className='status-btn';});var v=el.dataset.val;el.classList.add(v==='Normal'?'ok':v==='Warning'?'wrn':'crit');el.closest('.device-card-body').querySelector('[name="d_status_'+id+'"]').value=v;}
+  addDevice();
+
+  document.getElementById('electricalForm').addEventListener('submit',function(e){
+    e.preventDefault();var btn=document.getElementById('elecSubmitBtn');btn.disabled=true;btn.innerHTML=SPIN_SVG+' Submitting...';
+    var now=new Date(),devices=[];
+    document.querySelectorAll('#deviceList .device-card').forEach(function(card){
+      function g(n){var el=card.querySelector('[name^="d_'+n+'_"]');return el?el.value:'';}
+      devices.push({type:g('type'),device:g('device'),vAB:g('vAB'),vBC:g('vBC'),vCA:g('vCA'),iA:g('iA'),iB:g('iB'),iC:g('iC'),status:g('status'),remarks:g('remarks')});
+    });
+    var params={type:'electrical',timestamp:now.toISOString(),date:now.toLocaleDateString('en-PH'),time:now.toLocaleTimeString('en-PH'),plant:document.getElementById('elec-plant').value,technician:document.getElementById('elec-tech').value,shift:document.getElementById('elec-shift').value,devices:devices};
+    submitViaJSONP(params,function(){showToast('Line report submitted!');document.getElementById('electricalForm').reset();document.getElementById('deviceList').innerHTML='';devCount=0;addDevice();window.scrollTo({top:0,behavior:'smooth'});btn.disabled=false;btn.innerHTML=SEND_SVG+' SUBMIT LINE REPORT';},function(){showToast('Failed.',true);btn.disabled=false;btn.innerHTML=SEND_SVG+' SUBMIT LINE REPORT';});
+  });
+
+  // VIBRATION
+  document.getElementById('vibrationForm').addEventListener('submit',function(e){
+    e.preventDefault();var btn=document.getElementById('vibSubmitBtn');btn.disabled=true;btn.innerHTML=SPIN_SVG+' Submitting...';
+    var now=new Date(),form=document.getElementById('vibrationForm');
+    var params={type:'vibration',timestamp:now.toISOString(),date:now.toLocaleDateString('en-PH'),time:now.toLocaleTimeString('en-PH'),
+      plant:document.getElementById('vib-plant').value,technician:document.getElementById('vib-tech').value,shift:document.getElementById('vib-shift').value,
+      equipment:document.getElementById('vib-equipment').value,
+      m1_h:form.querySelector('[name="vib_r1_h"]').value,m1_v:form.querySelector('[name="vib_r1_v"]').value,m1_a:form.querySelector('[name="vib_r1_a"]').value,
+      m2_h:form.querySelector('[name="vib_r2_h"]').value,m2_v:form.querySelector('[name="vib_r2_v"]').value,m2_a:form.querySelector('[name="vib_r2_a"]').value,
+      p1_h:form.querySelector('[name="vib_r3_h"]').value,p1_v:form.querySelector('[name="vib_r3_v"]').value,p1_a:form.querySelector('[name="vib_r3_a"]').value,
+      p2_h:form.querySelector('[name="vib_r4_h"]').value,p2_v:form.querySelector('[name="vib_r4_v"]').value,p2_a:form.querySelector('[name="vib_r4_a"]').value,
+      b1_h:form.querySelector('[name="vib_r5_h"]').value,b1_v:form.querySelector('[name="vib_r5_v"]').value,b1_a:form.querySelector('[name="vib_r5_a"]').value,
+      b2_h:form.querySelector('[name="vib_r6_h"]').value,b2_v:form.querySelector('[name="vib_r6_v"]').value,b2_a:form.querySelector('[name="vib_r6_a"]').value,
+      remarks:form.querySelector('[name="vib_remarks"]').value};
+    submitViaJSONP(params,function(){showToast('Vibration report submitted!');form.reset();window.scrollTo({top:0,behavior:'smooth'});btn.disabled=false;btn.innerHTML=SEND_SVG+' SUBMIT VIBRATION REPORT';},function(){showToast('Failed.',true);btn.disabled=false;btn.innerHTML=SEND_SVG+' SUBMIT VIBRATION REPORT';});
+  });
+
+  // FUEL
+  document.getElementById('fuelForm').addEventListener('submit',function(e){
+    e.preventDefault();var btn=document.getElementById('fuelSubmitBtn');btn.disabled=true;btn.innerHTML=SPIN_SVG+' Submitting...';
+    var now=new Date(),form=document.getElementById('fuelForm');
+    function g(n){var el=form.querySelector('[name="'+n+'"]');return el?el.value:'';}
+    var params={type:'fuel',timestamp:now.toISOString(),date:now.toLocaleDateString('en-PH'),time:now.toLocaleTimeString('en-PH'),plant:document.getElementById('fuel-plant').value,technician:document.getElementById('fuel-tech').value,shift:document.getElementById('fuel-shift').value,dayTankPres:g('fuel_day_pres'),mainTankPres:g('fuel_main_pres'),remarks:g('fuel_remarks')};
+    submitViaJSONP(params,function(){showToast('Fuel report submitted!');form.reset();window.scrollTo({top:0,behavior:'smooth'});btn.disabled=false;btn.innerHTML=SEND_SVG+' SUBMIT FUEL REPORT';},function(){showToast('Failed.',true);btn.disabled=false;btn.innerHTML=SEND_SVG+' SUBMIT FUEL REPORT';});
+  });
+
+  // CHEMICAL
+  var replenishOpen=false;
+  function toggleReplenish(){replenishOpen=!replenishOpen;document.getElementById('replenishSection').classList.toggle('show',replenishOpen);}
+  document.getElementById('chemicalForm').addEventListener('submit',function(e){
+    e.preventDefault();var btn=document.getElementById('chemSubmitBtn');btn.disabled=true;btn.innerHTML=SPIN_SVG+' Submitting...';
+    var now=new Date(),form=document.getElementById('chemicalForm');
+    function g(n){var el=form.querySelector('[name="'+n+'"]');return el?el.value:'';}
+    var params={type:'chemical',timestamp:now.toISOString(),date:now.toLocaleDateString('en-PH'),time:now.toLocaleTimeString('en-PH'),plant:document.getElementById('chem-plant').value,technician:document.getElementById('chem-tech').value,shift:document.getElementById('chem-shift').value,siPres:g('chem_si_pres'),osPres:g('chem_os_pres'),remarks:g('chem_remarks'),siRefill:g('chk_si'),osRefill:g('chk_os'),saltRefill:g('chk_salt'),regenCount:g('chk_regen'),hasReplenish:replenishOpen?'YES':'NO',siReplenish:replenishOpen?g('chem_si_replenish'):'',osReplenish:replenishOpen?g('chem_os_replenish'):'',replenishRemarks:replenishOpen?g('chem_replenish_remarks'):''};
+    submitViaJSONP(params,function(){showToast('Chemical report submitted!');form.reset();replenishOpen=false;document.getElementById('replenishSection').classList.remove('show');window.scrollTo({top:0,behavior:'smooth'});btn.disabled=false;btn.innerHTML=SEND_SVG+' SUBMIT CHEMICAL REPORT';},function(){showToast('Failed.',true);btn.disabled=false;btn.innerHTML=SEND_SVG+' SUBMIT CHEMICAL REPORT';});
+  });
+
+  // BOILER
+  var BOILER_PARAMS=[
+    {key:'pressure',name:'Boiler Steam Pressure',unit:'Bar',limit:'10'},
+    {key:'steam_temp',name:'Steam Temperature',unit:'°C',limit:'185'},
+    {key:'modulation',name:'Modulation',unit:'%',limit:'100%'},
+    {key:'fw_tank_lvl',name:'Feed Water Tank Level',unit:'cm',limit:'22'},
+    {key:'fw_temp',name:'Feed Water Temperature',unit:'°C',limit:'90'},
+    {key:'fuel_press',name:'Fuel Pressure',unit:'MPA',limit:'1.5'},
+    {key:'stack_temp',name:'Stack Temperature',unit:'°C',limit:'260'},
+    {key:'blowdown',name:'Blowdown',unit:'',limit:''},
+    {key:'atomizing',name:'Atomizing Air',unit:'MPA',limit:'0.5'},
+    {key:'boiler_water',name:'Boiler Water Level',unit:'cm',limit:'>20'},
+    {key:'tds',name:'TDS Reading',unit:'ppm',limit:'≥3500'},
+    {key:'conductivity',name:'Conductivity Reading',unit:'µS/cm',limit:'≥6000'},
+    {key:'ph',name:'pH Level',unit:'',limit:'10.5-11.5'},
+  ];
+
+
+  function setYN(btn){
+    var key=btn.dataset.key, val=btn.dataset.val;
+    var row=btn.closest('tr');
+    row.querySelectorAll('.yn-btn').forEach(function(b){b.className='yn-btn';});
+    btn.classList.add(val==='YES'?'yes-on':'no-on');
+    document.getElementById('br-'+key).value=val;
+  }
+
+  function buildBoilerTable(){
+    var tbody=document.getElementById('boilerTbody');if(!tbody)return;tbody.innerHTML='';
+    BOILER_PARAMS.forEach(function(p){
+      var tr=document.createElement('tr');
+      var odd=BOILER_PARAMS.indexOf(p)%2===0;
+      tr.style.background=odd?'rgba(26,35,56,.6)':'rgba(19,25,41,.6)';
+      tr.id='brow-'+p.key;
+      tr.innerHTML=
+        '<td style="padding:.35rem .5rem;border-right:1px solid rgba(99,180,255,.07);font-size:.8rem;color:var(--text);font-weight:500;">'+p.name+'</td>'+
+        '<td style="padding:.35rem .5rem;border-right:1px solid rgba(99,180,255,.07);font-family:Rajdhani,sans-serif;font-size:.72rem;font-weight:700;color:var(--muted);text-align:center;" id="bu-'+p.key+'">'+p.unit+'</td>'+
+        '<td style="padding:.35rem .5rem;border-right:1px solid rgba(99,180,255,.07);font-family:Rajdhani,sans-serif;font-size:.72rem;font-weight:600;color:var(--warn);text-align:center;" id="bl-'+p.key+'">'+p.limit+'</td>'+
+        (p.key==='blowdown'?'<td style="padding:.35rem .45rem;border-right:1px solid rgba(99,180,255,.07);">'+'<div class="yn-row">'+'<button type="button" class="yn-btn" data-key="'+p.key+'" data-val="YES" onclick="setYN(this)">YES</button>'+'<button type="button" class="yn-btn" data-key="'+p.key+'" data-val="NO" onclick="setYN(this)">NO</button>'+'</div>'+'<input type="hidden" id="br-'+p.key+'" name="br_'+p.key+'" value="" />'+'</td>':'<td style="padding:.35rem .45rem;border-right:1px solid rgba(99,180,255,.07);"><input type="number" id="br-'+p.key+'" name="br_'+p.key+'" placeholder="0" step="0.01" inputmode="decimal" style="-moz-appearance:textfield;width:100%;height:34px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:0 .3rem;color:var(--text);font-family:Rajdhani,sans-serif;font-size:.92rem;font-weight:700;text-align:center;outline:none;" /></td>')+
+        '<td style="padding:.35rem .45rem;"><input type="text" name="brr_'+p.key+'" placeholder="remarks..." style="width:100%;height:32px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:0 .5rem;color:var(--text);font-family:DM Sans,sans-serif;font-size:.75rem;outline:none;" /></td>';
+      tbody.appendChild(tr);
+    });
+  }
+  buildBoilerTable();
+
+  document.getElementById('boiler-plant').addEventListener('change',function(){loadBoilerConfig(this.value);});
+
+  function loadBoilerConfig(plant){
+    var cbName='bcfg_'+Date.now(),s=document.createElement('script');
+    var timer=setTimeout(function(){clearTimeout(timer);delete window[cbName];if(s.parentNode)s.parentNode.removeChild(s);},6000);
+    s.onerror=function(){clearTimeout(timer);delete window[cbName];if(s.parentNode)s.parentNode.removeChild(s);};
+    window[cbName]=function(res){clearTimeout(timer);delete window[cbName];if(s.parentNode)s.parentNode.removeChild(s);
+      if(res&&res.result==='success'&&res.params){res.params.forEach(function(p){var u=document.getElementById('bu-'+p.key),l=document.getElementById('bl-'+p.key);if(u)u.textContent=p.unit;if(l)l.textContent=p.limit;});}
+    };
+    s.src=SCRIPT_URL+'?action=getBoilerConfig&plant='+encodeURIComponent(plant)+'&callback='+cbName;
+    document.head.appendChild(s);
+  }
+
+  function setBoilerStatus(el){el.closest('.status-row').querySelectorAll('.status-btn').forEach(function(b){b.className='status-btn';});var v=el.dataset.val;el.classList.add(v==='Normal'?'ok':v==='Warning'?'wrn':'crit');document.getElementById('boiler-status').value=v;}
+
+  document.getElementById('boilerForm').addEventListener('submit',function(e){
+    e.preventDefault();var btn=document.getElementById('boilerSubmitBtn');btn.disabled=true;btn.innerHTML=SPIN_SVG+' Submitting...';
+    var now=new Date(),form=document.getElementById('boilerForm');
+    function g(n){var el=form.querySelector('[name="'+n+'"]');return el?el.value:'';}
+    var readings={},perRemarks={};
+    BOILER_PARAMS.forEach(function(p){
+      var rEl=document.getElementById('br-'+p.key);readings[p.key]=rEl?rEl.value:'';
+      var rrEl=form.querySelector('[name="brr_'+p.key+'"]');perRemarks[p.key]=rrEl?rrEl.value:'';
+    });
+    var params={type:'boiler',timestamp:now.toISOString(),date:now.toLocaleDateString('en-PH'),time:now.toLocaleTimeString('en-PH'),plant:document.getElementById('boiler-plant').value,technician:document.getElementById('boiler-tech').value,shift:document.getElementById('boiler-shift').value,readings:JSON.stringify(readings),remarks_per_param:JSON.stringify(perRemarks),status:document.getElementById('boiler-status').value,general_remarks:g('boiler_remarks')};
+    submitViaJSONP(params,function(){showToast('Boiler report submitted!');form.reset();BOILER_PARAMS.forEach(function(p){var r=document.getElementById('br-'+p.key);if(r)r.value='';var rr=form.querySelector('[name="brr_'+p.key+'"]');if(rr)rr.value='';});document.getElementById('boiler-status').value='Normal';form.querySelector('.status-btn').classList.add('ok');window.scrollTo({top:0,behavior:'smooth'});btn.disabled=false;btn.innerHTML=SEND_SVG+' SUBMIT BOILER REPORT';},function(){showToast('Failed.',true);btn.disabled=false;btn.innerHTML=SEND_SVG+' SUBMIT BOILER REPORT';});
+  });
+
+  // PURCHASE REQUEST
+  var prCount=0;
+  function addPRItem(){
+    prCount++;var id=prCount,wrap=document.createElement('div');
+    wrap.className='device-card';wrap.id='pr-'+id;
+    wrap.innerHTML=
+      '<div class="device-card-header"><div class="device-num">Item '+id+'</div>'+
+      '<button type="button" class="del-btn" onclick="removePRItem('+id+')" '+(id===1?'disabled':'')+'>'+
+      '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>'+
+      '<div class="device-card-body">'+
+      '<div class="field"><label>Item Name <span class="required">*</span></label><input type="text" name="pr_item_'+id+'" placeholder="e.g. Ball valve 1/2 inch" required/></div>'+
+      '<div class="field"><label>Specifications</label><textarea name="pr_specs_'+id+'" placeholder="Brand, size, model, material..."></textarea></div>'+
+      '<div class="row-2"><div class="field"><label>Quantity</label><input type="number" name="pr_qty_'+id+'" placeholder="1" min="1" step="1" inputmode="numeric"/></div>'+
+      '<div class="field"><label>Unit</label><select name="pr_unit_'+id+'"><option value="pcs">pcs</option><option value="sets">sets</option><option value="kg">kg</option><option value="liters">liters</option><option value="meters">meters</option><option value="boxes">boxes</option></select></div></div>'+
+      '<div class="field"><label>Reason / Purpose</label><textarea name="pr_reason_'+id+'" placeholder="Why is this needed?"></textarea></div>'+
+      '</div>';
+    document.getElementById('prItemList').appendChild(wrap);
+    document.querySelectorAll('#prItemList .device-card').forEach(function(c){c.querySelector('.del-btn').disabled=document.querySelectorAll('#prItemList .device-card').length===1;});
+    wrap.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  function removePRItem(id){var el=document.getElementById('pr-'+id);if(el)el.remove();document.querySelectorAll('#prItemList .device-card').forEach(function(c,i){c.querySelector('.device-num').textContent='Item '+(i+1);c.querySelector('.del-btn').disabled=document.querySelectorAll('#prItemList .device-card').length===1;});}
+  addPRItem();
+
+  document.getElementById('purchaseForm').addEventListener('submit',function(e){
+    e.preventDefault();var btn=document.getElementById('prSubmitBtn');btn.disabled=true;btn.innerHTML=SPIN_SVG+' Submitting...';
+    var now=new Date(),items=[];
+    document.querySelectorAll('#prItemList .device-card').forEach(function(card){items.push({item:card.querySelector('[name^="pr_item_"]')?card.querySelector('[name^="pr_item_"]').value:'',specs:card.querySelector('[name^="pr_specs_"]')?card.querySelector('[name^="pr_specs_"]').value:'',qty:card.querySelector('[name^="pr_qty_"]')?card.querySelector('[name^="pr_qty_"]').value:'',unit:card.querySelector('[name^="pr_unit_"]')?card.querySelector('[name^="pr_unit_"]').value:'',reason:card.querySelector('[name^="pr_reason_"]')?card.querySelector('[name^="pr_reason_"]').value:''}); });
+    var params={type:'purchase',timestamp:now.toISOString(),date:now.toLocaleDateString('en-PH'),time:now.toLocaleTimeString('en-PH'),plant:document.getElementById('pr-plant').value,technician:document.getElementById('pr-tech').value,priority:document.getElementById('pr-priority').value,items:JSON.stringify(items)};
+    submitViaJSONP(params,function(){showToast('Purchase request submitted!');document.getElementById('purchaseForm').reset();document.getElementById('prItemList').innerHTML='';prCount=0;addPRItem();window.scrollTo({top:0,behavior:'smooth'});btn.disabled=false;btn.innerHTML=SEND_SVG+' SUBMIT PURCHASE REQUEST';},function(){showToast('Failed.',true);btn.disabled=false;btn.innerHTML=SEND_SVG+' SUBMIT PURCHASE REQUEST';});
+  });
+</script>
+</body>
+</html>
