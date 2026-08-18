@@ -257,6 +257,38 @@
     animation:bgDrift 55s linear infinite;
   }
 
+
+
+  .equip-card.on-current { border-left:4px solid var(--success); }
+  .equip-card.off-current { border-left:4px solid var(--danger); }
+  .status-badge { font-family:Rajdhani,sans-serif; font-size:.62rem; font-weight:700; letter-spacing:.08em; padding:2px 7px; border-radius:5px; flex-shrink:0; }
+  .status-badge.sb-on { background:rgba(16,185,129,.18); color:var(--success); border:1px solid var(--success); }
+  .status-badge.sb-off { background:rgba(239,68,68,.18); color:var(--danger); border:1px solid var(--danger); }
+  .status-badge.sb-unknown { background:var(--surface3); color:var(--muted); border:1px solid var(--border); }
+  .equip-meta { font-size:.68rem; color:var(--muted); margin-top:.4rem; font-family:DM Sans,sans-serif; line-height:1.4; }
+  .equip-meta-val { color:var(--accent2); font-weight:500; }
+  .equip-meta-reason { color:var(--warn); font-style:italic; }
+
+  .equip-card { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:.7rem .85rem; transition:border-color .2s; }
+  .equip-card.on { border-color:var(--success); background:rgba(16,185,129,.06); }
+  .equip-card.off { border-color:var(--danger); background:rgba(239,68,68,.06); }
+  .equip-card-top { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+  .equip-name { font-family:Rajdhani,sans-serif; font-size:.88rem; font-weight:700; letter-spacing:.03em; color:var(--text); }
+  .equip-toggle { display:flex; gap:.35rem; flex-shrink:0; }
+  .equip-btn { padding:.42rem .85rem; border:1px solid var(--border); border-radius:7px; background:var(--surface3); color:var(--muted); font-family:Rajdhani,sans-serif; font-size:.75rem; font-weight:700; letter-spacing:.06em; cursor:pointer; -webkit-tap-highlight-color:transparent; transition:all .15s; }
+  .equip-btn.on-active { background:rgba(16,185,129,.15); border-color:var(--success); color:var(--success); }
+  .equip-btn.off-active { background:rgba(239,68,68,.13); border-color:var(--danger); color:var(--danger); }
+  .equip-reason-wrap { margin-top:.55rem; display:none; }
+  .equip-card.off .equip-reason-wrap { display:block; }
+  .equip-reason-wrap input { width:100%; height:38px; background:var(--surface3); border:1px solid var(--border); border-radius:7px; padding:0 .7rem; color:var(--text); font-family:DM Sans,sans-serif; font-size:.82rem; outline:none; }
+  .equip-reason-wrap input:focus { border-color:var(--danger); }
+
+  /* Production tab background — production/factory theme */
+  #panel-prodstat::before {
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'><g stroke='%2310b981' stroke-width='2' fill='none'><rect x='30' y='60' width='30' height='40'/><rect x='75' y='45' width='35' height='55'/><line x1='60' y1='75' x2='75' y2='75'/><circle cx='45' cy='50' r='6'/><circle cx='92' cy='35' r='4'/><line x1='45' y1='56' x2='45' y2='60'/><line x1='92' y1='39' x2='92' y2='45'/></g></svg>");
+    animation:bgDrift 75s linear infinite;
+  }
+
   @keyframes bgDrift {
     from { background-position: 0 0; }
     to   { background-position: 300px 300px; }
@@ -303,6 +335,7 @@
   <button class="tab-btn" onclick="switchTab('boiler')" id="tab-boiler"><svg viewBox="0 0 24 24"><path d="M4 4h16v6a8 8 0 0 1-16 0V4z"/><line x1="12" y1="14" x2="12" y2="20"/><line x1="8" y1="20" x2="16" y2="20"/></svg>Boiler</button>
   <button class="tab-btn" onclick="switchTab('purchase')" id="tab-purchase"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Purchase</button>
   <button class="tab-btn" onclick="switchTab('rolldie')" id="tab-rolldie"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>Rolls &amp; Die</button>
+  <button class="tab-btn" onclick="switchTab('prodstat')" id="tab-prodstat"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Production</button>
 </div></div>
 
 <!-- TAB 1: LINE -->
@@ -592,6 +625,48 @@
   </button>
 </form></div></div>
 
+
+<!-- TAB: PRODUCTION STATUS -->
+<div class="tab-panel" id="panel-prodstat"><div class="container"><form id="prodstatForm">
+  <div class="card"><div class="card-title">Identification</div>
+    <div class="field"><label>Plant <span class="required">*</span></label>
+      <select id="ps-plant" required onchange="loadProdEquip(this.value)">
+        <option value="" disabled selected>Select plant...</option>
+        <option value="HOREB">HOREB</option><option value="ARGAO">ARGAO</option>
+      </select>
+    </div>
+    <div class="field"><label>Operator</label>
+      <div class="id-locked"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="id-locked-val" id="ps-tech-val">—</span><span class="id-locked-sub">signed in</span></div>
+      <input type="hidden" id="ps-tech" />
+    </div>
+    <div class="row-2">
+      <div class="field"><label>Shift</label>
+        <div class="id-locked" id="ps-shift-locked"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="id-locked-val" id="ps-shift-val">—</span><span class="id-locked-sub">assigned</span></div>
+        <select id="ps-shift-super" style="display:none;border-color:rgba(245,158,11,.4);color:var(--warn);" onchange="sSh('ps',this.value)"><option value="Day">Day Shift</option><option value="Night">Night Shift</option></select>
+        <input type="hidden" id="ps-shift" />
+      </div>
+      <div class="field"><label>Date &amp; Time</label>
+        <div class="timestamp-pill"><div class="ts-dot"></div><span class="ts-display">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card"><div class="card-title">Equipment Status</div>
+    <div style="font-size:.72rem;color:var(--muted);margin-bottom:.75rem;line-height:1.4;">Toggle each equipment ON/OFF. Add a reason if turning OFF. Timestamp is captured on submit.</div>
+    <div id="ps-equip-list" style="display:flex;flex-direction:column;gap:.6rem;">
+      <div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:.85rem;">Select a plant to load equipment...</div>
+    </div>
+    <div class="field" style="margin-top:.85rem;"><label>General Remarks</label>
+      <textarea name="ps_remarks" placeholder="Overall context, e.g. Mash silo refilled, resumed pelleting..."></textarea>
+    </div>
+  </div>
+
+  <button type="submit" class="submit-btn" id="psSubmitBtn">
+    <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    SUBMIT PRODUCTION STATUS
+  </button>
+</form></div></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -618,8 +693,8 @@
   const SPIN_SVG = '<svg viewBox="0 0 24 24" style="animation:spin 1s linear infinite;width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2.2"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>';
   const SEND_SVG = '<svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
 
-  var PANELS=['electrical','econsum','vibration','fuel','chemical','boiler','purchase','rolldie'];
-  function switchTab(id){PANELS.forEach(function(p){document.getElementById('panel-'+p).classList.toggle('active',p===id);document.getElementById('tab-'+p).classList.toggle('active',p===id);});window.scrollTo({top:0,behavior:'smooth'});}
+  var PANELS=['electrical','econsum','vibration','fuel','chemical','boiler','purchase','rolldie','prodstat'];
+  function switchTab(id){PANELS.forEach(function(p){document.getElementById('panel-'+p).classList.toggle('active',p===id);document.getElementById('tab-'+p).classList.toggle('active',p===id);});window.scrollTo({top:0,behavior:'smooth'});if(id==='prodstat'){var pp=document.getElementById('ps-plant');if(pp&&pp.value)loadProdEquip(pp.value);}}
 
   var MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],DA=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   function pad(n){return String(n).padStart(2,'0');}
@@ -943,7 +1018,7 @@
   ══════════════════════════════════════ */
   function applyPmoView(user){
     // Hide every tab button except Rolls & Die
-    var allTabs = ['electrical','econsum','vibration','fuel','chemical','boiler','purchase'];
+    var allTabs = ['electrical','econsum','vibration','fuel','chemical','boiler','purchase','prodstat'];
     allTabs.forEach(function(t){
       var btn = document.getElementById('tab-'+t);
       var panel = document.getElementById('panel-'+t);
@@ -974,7 +1049,7 @@
   }
 
   function restoreTechView(){
-    var allTabs = ['electrical','econsum','vibration','fuel','chemical','boiler','purchase','rolldie'];
+    var allTabs = ['electrical','econsum','vibration','fuel','chemical','boiler','purchase','rolldie','prodstat'];
     allTabs.forEach(function(t){
       var btn = document.getElementById('tab-'+t);
       var panel = document.getElementById('panel-'+t);
@@ -993,6 +1068,149 @@
       if(v) v.textContent = s;
     }
   }, 60000);
+
+
+
+  /* ══════════════════════════════════════
+     PRODUCTION STATUS
+  ══════════════════════════════════════ */
+  var CURRENT_EQUIP = [];
+
+  function loadProdEquip(plant){
+    if(!plant) return;
+    var list = document.getElementById('ps-equip-list');
+    list.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.8rem;">Loading equipment status...</div>';
+    var cb='pse_'+Date.now(), s=document.createElement('script');
+    var timer=setTimeout(function(){
+      clearTimeout(timer); delete window[cb];
+      if(s.parentNode) s.parentNode.removeChild(s);
+      list.innerHTML='<div style="text-align:center;padding:1rem;color:var(--danger);font-size:.8rem;">Failed to load. Try again.</div>';
+    }, 8000);
+    s.onerror=function(){clearTimeout(timer);delete window[cb];if(s.parentNode)s.parentNode.removeChild(s);};
+    window[cb]=function(res){
+      clearTimeout(timer); delete window[cb];
+      if(s.parentNode) s.parentNode.removeChild(s);
+      if(res && res.result==='success' && res.equipment){
+        CURRENT_EQUIP = res.equipment.map(function(e){return e.name;});
+        renderEquipCards(res.equipment);
+      } else {
+        list.innerHTML='<div style="text-align:center;padding:1rem;color:var(--muted);font-size:.8rem;">No equipment configured for '+plant+'.</div>';
+      }
+    };
+    s.src=SCRIPT_URL+'?action=getCurrentEquipStatus&plant='+encodeURIComponent(plant)+'&callback='+cb;
+    document.head.appendChild(s);
+  }
+
+  function renderEquipCards(equipment){
+    var list = document.getElementById('ps-equip-list');
+    list.innerHTML = '';
+    equipment.forEach(function(eq, idx){
+      var card = document.createElement('div');
+      var currentStatus = eq.status || '';
+      card.className = 'equip-card' + (currentStatus==='ON'?' on-current':currentStatus==='OFF'?' off-current':'');
+      card.dataset.equipment = eq.name;
+      card.dataset.status = ''; // pending change status (empty until user toggles)
+      card.dataset.currentStatus = currentStatus;
+
+      var statusBadge = currentStatus
+        ? '<span class="status-badge '+(currentStatus==='ON'?'sb-on':'sb-off')+'">'+currentStatus+'</span>'
+        : '<span class="status-badge sb-unknown">NO DATA</span>';
+
+      var meta = eq.last_change
+        ? '<div class="equip-meta">Last: <span class="equip-meta-val">'+eq.last_change+'</span> by <span class="equip-meta-val">'+(eq.last_by||'—')+'</span>'
+          + (eq.reason ? ' — <span class="equip-meta-reason">'+eq.reason+'</span>' : '')
+          + '</div>'
+        : '<div class="equip-meta" style="color:var(--muted);">No prior status recorded</div>';
+
+      card.innerHTML =
+        '<div class="equip-card-top">'+
+          '<div style="display:flex;align-items:center;gap:.5rem;flex:1;min-width:0;">'+
+            '<div class="equip-name">'+eq.name+'</div>'+
+            statusBadge+
+          '</div>'+
+          '<div class="equip-toggle">'+
+            '<button type="button" class="equip-btn" data-set="ON" onclick="setEquipStatus(this)">ON</button>'+
+            '<button type="button" class="equip-btn" data-set="OFF" onclick="setEquipStatus(this)">OFF</button>'+
+          '</div>'+
+        '</div>'+
+        meta+
+        '<div class="equip-reason-wrap">'+
+          '<input type="text" placeholder="Reason (e.g. mash silo empty)" data-reason="'+idx+'"/>'+
+        '</div>';
+      list.appendChild(card);
+    });
+  }
+
+  function setEquipStatus(btn){
+    var card = btn.closest('.equip-card');
+    var status = btn.dataset.set;
+    card.querySelectorAll('.equip-btn').forEach(function(b){
+      b.classList.remove('on-active','off-active');
+    });
+    if(status === 'ON'){
+      btn.classList.add('on-active');
+      card.classList.remove('off'); card.classList.add('on');
+    } else {
+      btn.classList.add('off-active');
+      card.classList.remove('on'); card.classList.add('off');
+    }
+    card.dataset.status = status;
+  }
+
+  document.getElementById('prodstatForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var btn = document.getElementById('psSubmitBtn');
+    var events = [];
+    document.querySelectorAll('#ps-equip-list .equip-card').forEach(function(card){
+      var status = card.dataset.status;
+      if(!status) return; // skip untouched equipment
+      var reasonInput = card.querySelector('input[data-reason]');
+      events.push({
+        equipment: card.dataset.equipment,
+        status: status,
+        reason: reasonInput ? reasonInput.value : ''
+      });
+    });
+    if(events.length === 0){
+      showToast('Toggle at least one equipment.', true);
+      return;
+    }
+    btn.disabled = true; btn.innerHTML = SPIN_SVG+' Submitting...';
+    var now = new Date(), form = document.getElementById('prodstatForm');
+    var params = {
+      type: 'prod_status',
+      timestamp: now.toISOString(),
+      date: now.toLocaleDateString('en-PH'),
+      time: now.toLocaleTimeString('en-PH'),
+      plant: document.getElementById('ps-plant').value,
+      operator: document.getElementById('ps-tech').value,
+      shift: document.getElementById('ps-shift').value,
+      events: JSON.stringify(events),
+      remarks: form.querySelector('[name="ps_remarks"]').value
+    };
+    submitViaJSONP(params,
+      function(){
+        showToast('Production status logged ('+events.length+' event'+(events.length>1?'s':'')+')!');
+        // Reset the toggle states but keep equipment cards
+        document.querySelectorAll('#ps-equip-list .equip-card').forEach(function(card){
+          card.classList.remove('on','off');
+          card.dataset.status = '';
+          card.querySelectorAll('.equip-btn').forEach(function(b){
+            b.classList.remove('on-active','off-active');
+          });
+          var ri = card.querySelector('input[data-reason]');
+          if(ri) ri.value = '';
+        });
+        form.querySelector('[name="ps_remarks"]').value = '';
+        window.scrollTo({top:0,behavior:'smooth'});
+        btn.disabled = false; btn.innerHTML = SEND_SVG+' SUBMIT PRODUCTION STATUS';
+      },
+      function(){
+        showToast('Failed.', true);
+        btn.disabled = false; btn.innerHTML = SEND_SVG+' SUBMIT PRODUCTION STATUS';
+      }
+    );
+  });
 
 
   // LOGIN
@@ -1023,7 +1241,7 @@
   function loginSuccess(user){
     currentUser=user;
     var isPmo = user.role === 'PMO';
-    ['elec','ec','vib','fuel','chem','boiler','pr','rd'].forEach(function(prefix){
+    ['elec','ec','vib','fuel','chem','boiler','pr','rd','ps'].forEach(function(prefix){
       var techEl=document.getElementById(prefix+'-tech'),techVal=document.getElementById(prefix+'-tech-val');
       var shiftEl=document.getElementById(prefix+'-shift'),shiftVal=document.getElementById(prefix+'-shift-val');
       if(techEl)techEl.value=user.name||'';if(techVal)techVal.textContent=user.name||'—';
@@ -1032,7 +1250,7 @@
       if(plantEl&&user.plant){for(var i=0;i<plantEl.options.length;i++){if(plantEl.options[i].value===user.plant){plantEl.selectedIndex=i;break;}}}
     });
     var isSuper=user.role==='SUPER';
-    ['elec','ec','vib','fuel','chem','boiler','pr','rd'].forEach(function(p){
+    ['elec','ec','vib','fuel','chem','boiler','pr','rd','ps'].forEach(function(p){
       var plantEl=document.getElementById(p+'-plant');
       var shiftLocked=document.getElementById(p+'-shift-locked');
       var shiftSuper=document.getElementById(p+'-shift-super');
@@ -1067,6 +1285,14 @@
             }
             onRdPlantChange();
           }
+          // Also load production equipment
+          var psPlant = document.getElementById('ps-plant');
+          if(psPlant){
+            for(var j=0;j<psPlant.options.length;j++){
+              if(psPlant.options[j].value===user.plant){ psPlant.selectedIndex=j; break; }
+            }
+            loadProdEquip(user.plant);
+          }
         }, 600);
       }
     }
@@ -1097,13 +1323,13 @@
   function doLogout(){
     currentUser=null;
     restoreTechView();
-    ['elec','ec','vib','fuel','chem','boiler','pr','rd'].forEach(function(p){
+    ['elec','ec','vib','fuel','chem','boiler','pr','rd','ps'].forEach(function(p){
       var pEl=document.getElementById(p+'-plant');
       if(pEl){pEl.disabled=false;pEl.style.borderColor='';pEl.selectedIndex=0;}
       var sl=document.getElementById(p+'-shift-locked');if(sl)sl.style.display='flex';
       var ss=document.getElementById(p+'-shift-super');if(ss)ss.style.display='none';
     });
-    ['elec','ec','vib','fuel','chem','boiler','pr','rd'].forEach(function(prefix){
+    ['elec','ec','vib','fuel','chem','boiler','pr','rd','ps'].forEach(function(prefix){
       ['tech','shift'].forEach(function(f){var el=document.getElementById(prefix+'-'+f);if(el)el.value='';var v=document.getElementById(prefix+'-'+f+'-val');if(v)v.textContent='—';});
     });
     document.getElementById('userBadge').style.display='none';
