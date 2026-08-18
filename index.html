@@ -1025,11 +1025,16 @@
       if(btn) btn.style.display = 'none';
       if(panel){ panel.classList.remove('active'); panel.style.display = 'none'; }
     });
-    // Show Rolls & Die
+    // Show Rolls & Die and Production
     var rdBtn = document.getElementById('tab-rolldie');
     var rdPanel = document.getElementById('panel-rolldie');
     if(rdBtn){ rdBtn.style.display = ''; rdBtn.classList.add('active'); }
-    if(rdPanel){ rdPanel.classList.add('active'); rdPanel.style.display = 'block'; }
+    if(rdPanel){ rdPanel.classList.add('active'); }
+    // Also make Production tab visible for PMO
+    var psBtn = document.getElementById('tab-prodstat');
+    var psPanel = document.getElementById('panel-prodstat');
+    if(psBtn){ psBtn.style.display = ''; }
+    if(psPanel){ psPanel.style.removeProperty('display'); }
 
     // Auto-fill PMO identification
     document.getElementById('rd-tech').value = user.name || '';
