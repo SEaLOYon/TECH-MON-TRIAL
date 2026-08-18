@@ -1018,7 +1018,7 @@
   ══════════════════════════════════════ */
   function applyPmoView(user){
     // Hide every tab button except Rolls & Die
-    var allTabs = ['electrical','econsum','vibration','fuel','chemical','boiler','purchase','prodstat'];
+    var allTabs = ['electrical','econsum','vibration','fuel','chemical','boiler','purchase'];
     allTabs.forEach(function(t){
       var btn = document.getElementById('tab-'+t);
       var panel = document.getElementById('panel-'+t);
@@ -1045,6 +1045,19 @@
       }
       onRdPlantChange();
       loadRollsDieConfig(user.plant);
+      // Also auto-fill and load Production tab for PMO
+      document.getElementById('ps-tech').value = user.name || '';
+      document.getElementById('ps-tech-val').textContent = user.name || '—';
+      var pShift = detectShiftByTime();
+      document.getElementById('ps-shift').value = pShift;
+      document.getElementById('ps-shift-val').textContent = pShift;
+      var psPlant = document.getElementById('ps-plant');
+      if(psPlant){
+        for(var k=0;k<psPlant.options.length;k++){
+          if(psPlant.options[k].value===user.plant){ psPlant.selectedIndex=k; break; }
+        }
+        loadProdEquip(user.plant);
+      }
     }
   }
 
@@ -1062,10 +1075,12 @@
   setInterval(function(){
     if(currentUser && currentUser.role === 'PMO'){
       var s = detectShiftByTime();
-      var el = document.getElementById('rd-shift');
-      var v = document.getElementById('rd-shift-val');
-      if(el) el.value = s;
-      if(v) v.textContent = s;
+      ['rd','ps'].forEach(function(prefix){
+        var el = document.getElementById(prefix+'-shift');
+        var v = document.getElementById(prefix+'-shift-val');
+        if(el) el.value = s;
+        if(v) v.textContent = s;
+      });
     }
   }, 60000);
 
